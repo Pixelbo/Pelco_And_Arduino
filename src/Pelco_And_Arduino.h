@@ -1,16 +1,10 @@
 /*!
- *  @file maincomponent.cpp
+ *  @file Pelco_And_Arduino.h
  *
- *  @mainpage Main component
+ *  @mainpage The root of this libray!
  *
- *  @section intro_sec Introduction
- *
- *  Introduction etc etc...
- *
- *  @section author Author
- *
- *  Written by XXX.
- *
+ *  @section author Written by Boris Hilkens.
+ * 
  *  @section license License
  *
  *  MIT license, all text above must be included in any redistribution
