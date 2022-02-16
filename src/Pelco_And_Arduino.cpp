@@ -23,7 +23,6 @@
  *  @param  Address The address of the camera
  *  @param  baud baud of the camera
  * 
- *	@return returnValue description
  */
 
 PelcoCam::PelcoCam(uint8_t Address, int baud, int txPin, int rxPin, bool log_messages=false){
@@ -42,11 +41,20 @@ PelcoCam::PelcoCam(uint8_t Address, int baud, int txPin, int rxPin, bool log_mes
     SerialCam.begin(baud);
 }
 
-void PelcoCam::send_message(uint8_t command, uint8_t params=0x00, uint8_t params2=0x00){
+/*!
+ *  @brief  Send message to the camera
+ * 
+ *  @param  command the wanted command (see header)
+ *  @param  params Main parameter
+ *  @param  params2 Second parameter for command that requires 2 parameters
+ * 
+ */
+
+void PelcoCam::send_message(uint8_t command, uint8_t params, uint8_t params2){
   messToCamera[0] = 0xFF;
   messToCamera[1] = Address_;
 
-  if(command == ON || command == OFF){ //If the command is on or off, set the command to byte 3
+  if(command == ON || command == OFF){ //If the command is on or off, set the command to uint8_t 3
       messToCamera[2] = command;
       messToCamera[3] = 0x00;
   }else{
@@ -67,16 +75,12 @@ void PelcoCam::send_message(uint8_t command, uint8_t params=0x00, uint8_t params
 
   if(log_messages_){
     Serial.print("Sending message: ");
-    logMessage(messToCamera);
+    for(int i=0; i<7; i++){
+      Serial.printf("%02X", messToCamera[i]);
+      Serial.print(" ");
+    }
+    Serial.println();
   }
 
   SerialCam.write(messToCamera, sizeof(messToCamera));
-}
-
-void logMessage(uint8_t hexString[]){
-  for(int i=0; i<7; i++){
-    Serial.printf("%02X", hexString[i]);
-    Serial.print(" ");
-  }
-  Serial.println();
 }

@@ -18,37 +18,37 @@
 #include <SoftwareSerial.h>
 
 //////////////////////////////////////////Some constants
-#define PAN_L  0x04
-#define PAN_R  0x02
-#define TILT_U  0x08
-#define TILT_D  0x10
+const uint8_t PROGMEM PAN_L = 0x04;
+const uint8_t PROGMEM PAN_R = 0x02;
+const uint8_t PROGMEM TILT_U = 0x08;
+const uint8_t PROGMEM TILT_D = 0x10;
 
-#define PAN_L_TILT_U  0x0C
-#define PAN_R_TILT_U  0x0A
-#define PAN_L_TILT_D  0x14
-#define PAN_R_TILT_D  0x12
+const uint8_t PROGMEM PAN_L_TILT_U = 0x0C;
+const uint8_t PROGMEM PAN_R_TILT_U = 0x0A;
+const uint8_t PROGMEM PAN_L_TILT_D = 0x14;
+const uint8_t PROGMEM PAN_R_TILT_D = 0x12;
 
-#define ZOOM_T  0x20
-#define ZOOM_W  0x40
-#define SET_ZOOM_SPEED  0x25
+const uint8_t PROGMEM ZOOM_T = 0x20;
+const uint8_t PROGMEM ZOOM_W = 0x40;
+const uint8_t PROGMEM SET_ZOOM_SPEED = 0x25;
 
-#define STOP  0x00
+const uint8_t PROGMEM STOP = 0x00;
 
-#define ON  0x88 //!!!!not byte 4 but 3
-#define OFF  0x08
+const uint8_t PROGMEM ON = 0x88; //!!!!not byte 4 but 3
+const uint8_t PROGMEM OFF = 0x08;
 
-#define RESET  0x29
+const uint8_t PROGMEM RESET = 0x29;
 
-#define SET_PRESET  0x03 //data2 preset id
-#define GOTO_PRESET  0x05 //data2 preset id
-#define CLR_PRESET  0x07 //data2 preset id
+const uint8_t PROGMEM SET_PRESET = 0x03; //data2 preset id
+const uint8_t PROGMEM GOTO_PRESET = 0x05; //data2 preset id
+const uint8_t PROGMEM CLR_PRESET = 0x07; //data2 preset id
 
-#define QUERY_PAN  0x51
-#define QUERY_TILT  0x53
-#define QUERY_ZOOM  0x55
-#define RESP_PAN  0x59
-#define RESP_TILT  0x5B
-#define RESP_ZOOM  0x5D
+const uint8_t PROGMEM QUERY_PAN = 0x51;
+const uint8_t PROGMEM QUERY_TILT = 0x53;
+const uint8_t PROGMEM QUERY_ZOOM = 0x55;
+const uint8_t PROGMEM RESP_PAN = 0x59;
+const uint8_t PROGMEM RESP_TILT = 0x5B;
+const uint8_t PROGMEM RESP_ZOOM = 0x5D;
 
 /*
 
@@ -87,12 +87,9 @@ class PelcoCam {
                          0x00  //Checksum: add all byte except sync and then modulo 0x100
                          };
 
-
-        void logMessage(uint8_t hexString[]);
-
     public:
         PelcoCam(uint8_t Address, int baud, int txPin, int rxPin, bool log_messages);
-        void send_message(uint8_t command, uint8_t params, uint8_t params2);
+        void send_message(uint8_t command, uint8_t params=0x00, uint8_t params2=0x00);
 
     
 };
