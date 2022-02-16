@@ -86,4 +86,6 @@ dkms.conf
 # Ignore all local history of files
 .history
 
+.vscode/
+build/
 # End of https://www.gitignore.io/api/c,c++,visualstudiocode
