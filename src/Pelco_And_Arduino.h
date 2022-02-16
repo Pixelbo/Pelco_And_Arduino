@@ -89,6 +89,7 @@ class PelcoCam {
 
     public:
         PelcoCam(uint8_t Address, int baud, int txPin, int rxPin, bool log_messages);
+        void begin();
         void send_message(uint8_t command, uint8_t params=0x00, uint8_t params2=0x00);
 
     

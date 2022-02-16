@@ -31,14 +31,21 @@ PelcoCam::PelcoCam(uint8_t Address, int baud, int txPin, int rxPin, bool log_mes
     txPin_ = txPin;
     rxPin_ = rxPin;
     log_messages_ = log_messages;
-    
+
+}
+
+/*!
+ *  @brief  begin everything
+ * 
+ */
+
+void PelcoCam::begin(){
     if(log_messages_){
         Serial.begin(115200);
         Serial.println("Message log has been activated!");
     }
 
-    SoftwareSerial SerialCam(rxPin, txPin) ;
-    SerialCam.begin(baud);
+    SerialCam.begin(baud_, SWSERIAL_8N1, rxPin_, txPin_);
 }
 
 /*!
@@ -64,10 +71,12 @@ void PelcoCam::send_message(uint8_t command, uint8_t params, uint8_t params2){
 
   if(command == PAN_L || command == PAN_R){
       messToCamera[4] = params;
+      messToCamera[5] = 0x00;
   }else if(command == PAN_L_TILT_U || command == PAN_R_TILT_U || command == PAN_L_TILT_D || command == PAN_R_TILT_D){
       messToCamera[4] = params2;
       messToCamera[5] = params;
   }else{
+      messToCamera[4] = 0x00;
       messToCamera[5] = params;
   }
 
