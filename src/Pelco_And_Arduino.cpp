@@ -10,8 +10,6 @@
  *  MIT license, all text above must be included in any redistribution
  */
 
-// Function comment
-
 #include "Arduino.h"
 #include <SoftwareSerial.h>
 
@@ -21,7 +19,8 @@
  *  @brief  Constructor
  * 
  *  @param  Address The address of the camera
- *  @param  baud baud of the camera
+ *  @param  baud baud of the cameras
+ *  @param parameter-name description
  * 
  */
 
@@ -57,11 +56,11 @@ void PelcoCam::begin(){
  * 
  */
 
-void PelcoCam::send_message(uint8_t command, uint8_t params, uint8_t params2){
+void PelcoCam::send_command(uint8_t command, uint8_t params, uint8_t params2){
   messToCamera[0] = 0xFF;
   messToCamera[1] = Address_;
 
-  if(command == ON || command == OFF){ //If the command is on or off, set the command to uint8_t 3
+  if(command == ON || command == OFF || command == FOCUS_N){ //If the command is on or off, set the command to uint8_t 3
       messToCamera[2] = command;
       messToCamera[3] = 0x00;
   }else{
@@ -92,4 +91,105 @@ void PelcoCam::send_message(uint8_t command, uint8_t params, uint8_t params2){
   }
 
   SerialCam.write(messToCamera, sizeof(messToCamera));
+}
+
+/*!
+ *  @brief  Send a query to the camera and reads the response
+ * 
+ *  @param  request the wanted reponse (see header)
+ *  @param  timeout default 1000; timout for waiting a byte
+ *  @param  maxbuffer Maximum size of the buffer; defaut 20
+ * 
+ * @return true if succeded, false if an error occured
+ */
+
+bool PelcoCam::send_request(uint8_t request, uint timeout, uint maxbuffer){
+    byte response_command;
+
+    if(request == QUERY_PAN){response_command == RESP_PAN;}
+    else if(request == QUERY_TILT){response_command = RESP_TILT;}
+    else if(request == QUERY_ZOOM){response_command = RESP_ZOOM;}
+    else if(request == QUERY_FOCUS){response_command = RESP_FOCUS;}
+    else{
+        if(log_messages_) Serial.println("No valid request provided");
+        return false;
+    }
+
+    send_command(request); //Send the query
+
+    while (!SerialCam.available()){//Wait for the first bit
+        if (timeout==0){ //If timeout is reached
+            if(log_messages_) Serial.print("ERROR timout reached");
+            return false;
+        }
+        timeout--;
+        delayMicroseconds(10);
+    }
+
+    byte buffer[maxbuffer]; // Buffer for the reception from the camera
+    uint index = 0;
+
+     while(SerialCam.available()){//Do it until there is no more things to read
+        buffer[index]=SerialCam.read();
+        index++;
+     } 
+
+    /* A theorical response:
+    FF   00   59      4A  13  B7
+    sync null command msb lsb checksum
+
+    A practical response (what does the arduino reads):
+        FF 00 FF 00 59 4A 13 B7 FF 01 48
+    */
+
+    int command_index = searchIndex(buffer, 0x59);//Looks up where is the index of the response command
+
+    if(command_index == -1 //Checks if found
+    || command_index < 3  //Checks if the reponse byte is in the right place
+    ){
+        if(log_messages_)Serial.println("Warn: no reponse from camera");
+        return false;
+    }
+
+    //Checksum is sum of everything except sync modulo 0x100
+    bool checksum = ((buffer[command_index] + buffer[command_index+1] + buffer[command_index+2])%0x100 == buffer[command_index+3]);
+    
+    //Checking the sync byte, the null byte and the checksum
+    if(buffer[command_index-3] != 0xFF && 
+       buffer[command_index-2 != 00] &&
+       !checksum){
+        return false;
+    }
+    
+    for(int i=0; i<7; i++){
+        messFromcamera[i] = buffer[(command_index-3)+i];
+    }
+
+    if(log_messages_){
+        Serial.print("Message from camera: ");
+        for(int i=0; i<7; i++){
+            Serial.printf("%02X ", messFromcamera[i]);
+        } 
+        Serial.println();
+    }
+
+    return true;
+}
+
+/*!
+ *  @brief  Dearch a value trough a array of bytes
+ * 
+ *  @param  look_array the array
+ *  @param  value value to lookup
+ * 
+ * @return the index of the element found
+ */
+
+int PelcoCam::searchIndex(byte look_array[], byte value){
+  for(int i=0; i<sizeof(look_array)/sizeof(look_array[0]); i++){
+    if (look_array[i] == value){
+      return i;
+    }
+  }
+  return -1;
 }
