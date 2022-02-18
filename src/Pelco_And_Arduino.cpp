@@ -176,9 +176,22 @@ int PelcoCam::send_request(uint8_t request, uint timeout, uint maxbuffer){
     return messFromcamera[4]; //Returns MSB
 }
 
-void PelcoCam::send_raw(uint8_t raw_command[]){
-    if(raw_command[0]!=0xFF) return;
+void PelcoCam::send_raw(String hex_string){
+    hex_string.replace(" ", ""); //Replace spaces
 
+    int size = hex_string.length()/2; //Size of the string without space
+    byte raw_command[size]; //the final command
+    char buffer[3]; //A buffer, to convert the string into an array of char
+
+    for(int i=0; i<=size; i++){ //Loops to every char in in the string
+        hex_string.substring(i*2, i*2+2).toCharArray(buffer, sizeof(buffer));//Slices the string into 2 pair of "bytes" and convert them into char arry
+        raw_command[i] = (byte) strtol(buffer, NULL, 16); //conversion into byte
+    }
+
+
+    if(raw_command[0]!=0xFF) return; //Check sync byte
+
+    /////Check checksum
     uint8_t checksum = (raw_command[1] + raw_command[2] + raw_command[3] + raw_command[4] + raw_command[5])%0x100;
     if(checksum != raw_command[6]){
         if(log_messages_) Serial.println("Wrong chacksum, updating to right checksum");
@@ -186,7 +199,16 @@ void PelcoCam::send_raw(uint8_t raw_command[]){
         raw_command[6] = checksum;
     }
 
-    SerialCam.write(messToCamera, sizeof(messToCamera));
+    if(log_messages_){
+        Serial.print("Sending message: ");
+        for(int i=0; i<size; i++){
+            Serial.printf("%02X", raw_command[i]);
+            Serial.print(" ");
+        }
+    Serial.println();
+    }
+    //write the command to the camera
+    SerialCam.write(raw_command, sizeof(raw_command));
 }
 
 /*!

@@ -103,7 +103,7 @@ class PelcoCam {
         void begin();
         void send_command(uint8_t command, uint8_t params=0x00, uint8_t params2=0x00);
         int send_request(uint8_t request, uint timeout = 1000, uint max_buffer=20); 
-        void send_raw(uint8_t raw_command[]);
+        void send_raw(String hex_string);
 
 };
 
