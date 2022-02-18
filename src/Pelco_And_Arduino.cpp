@@ -103,7 +103,7 @@ void PelcoCam::send_command(uint8_t command, uint8_t params, uint8_t params2){
  * @return true if succeded, false if an error occured
  */
 
-bool PelcoCam::send_request(uint8_t request, uint timeout, uint maxbuffer){
+int PelcoCam::send_request(uint8_t request, uint timeout, uint maxbuffer){
     byte response_command;
 
     if(request == QUERY_PAN){response_command == RESP_PAN;}
@@ -112,7 +112,7 @@ bool PelcoCam::send_request(uint8_t request, uint timeout, uint maxbuffer){
     else if(request == QUERY_FOCUS){response_command = RESP_FOCUS;}
     else{
         if(log_messages_) Serial.println("No valid request provided");
-        return false;
+        return -1;
     }
 
     send_command(request); //Send the query
@@ -120,7 +120,7 @@ bool PelcoCam::send_request(uint8_t request, uint timeout, uint maxbuffer){
     while (!SerialCam.available()){//Wait for the first bit
         if (timeout==0){ //If timeout is reached
             if(log_messages_) Serial.print("ERROR timout reached");
-            return false;
+            return -1;
         }
         timeout--;
         delayMicroseconds(10);
@@ -148,7 +148,7 @@ bool PelcoCam::send_request(uint8_t request, uint timeout, uint maxbuffer){
     || command_index < 3  //Checks if the reponse byte is in the right place
     ){
         if(log_messages_)Serial.println("Warn: no reponse from camera");
-        return false;
+        return -1;
     }
 
     //Checksum is sum of everything except sync modulo 0x100
@@ -158,7 +158,7 @@ bool PelcoCam::send_request(uint8_t request, uint timeout, uint maxbuffer){
     if(buffer[command_index-3] != 0xFF && 
        buffer[command_index-2 != 00] &&
        !checksum){
-        return false;
+        return -1;
     }
     
     for(int i=0; i<7; i++){
@@ -173,7 +173,20 @@ bool PelcoCam::send_request(uint8_t request, uint timeout, uint maxbuffer){
         Serial.println();
     }
 
-    return true;
+    return messFromcamera[4]; //Returns MSB
+}
+
+void PelcoCam::send_raw(uint8_t raw_command[]){
+    if(raw_command[0]!=0xFF) return;
+
+    uint8_t checksum = (raw_command[1] + raw_command[2] + raw_command[3] + raw_command[4] + raw_command[5])%0x100;
+    if(checksum != raw_command[6]){
+        if(log_messages_) Serial.println("Wrong chacksum, updating to right checksum");
+
+        raw_command[6] = checksum;
+    }
+
+    SerialCam.write(messToCamera, sizeof(messToCamera));
 }
 
 /*!

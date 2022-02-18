@@ -35,7 +35,7 @@ const uint8_t PROGMEM SET_ZOOM_SPEED = 0x25; //Param from 00 to 03
 const uint8_t PROGMEM FOCUS_F = 0x80;
 const uint8_t PROGMEM FOCUS_N = 0x01;//!!!!not byte 4 but 3
 const uint8_t PROGMEM SET_FOCUS_SPEED = 0x27; //Param from 00 to 03
-const uint8_t PROGMEM AUTO_FOCUS = 0x2B;  //Param from 00 to 02
+const uint8_t PROGMEM AUTO_FOCUS = 0x2B;  //Param from 00 to 02 (auto/on/off)
 
 const uint8_t PROGMEM STOP = 0x00;
 
@@ -102,7 +102,8 @@ class PelcoCam {
         PelcoCam(uint8_t Address, int baud, int txPin, int rxPin, bool log_messages);
         void begin();
         void send_command(uint8_t command, uint8_t params=0x00, uint8_t params2=0x00);
-        bool send_request(uint8_t request, uint timeout = 1000, uint max_buffer=20); 
+        int send_request(uint8_t request, uint timeout = 1000, uint max_buffer=20); 
+        void send_raw(uint8_t raw_command[]);
 
 };
 
