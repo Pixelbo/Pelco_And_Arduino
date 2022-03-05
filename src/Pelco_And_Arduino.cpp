@@ -24,13 +24,13 @@
  * 
  */
 
-PelcoCam::PelcoCam(uint8_t Address, int baud, int txPin, int rxPin, bool log_messages=false){
+PelcoCam::PelcoCam(uint8_t Address, int baud, int txPin, int rxPin, int readEnPin=NOT_A_PIN, bool log_messages=false){
     Address_ = Address;
     baud_ = baud;
     txPin_ = txPin;
     rxPin_ = rxPin;
+    rePin_ = readEnPin;
     log_messages_ = log_messages;
-
 }
 
 /*!
@@ -44,6 +44,22 @@ void PelcoCam::begin(){
         Serial.println("Message log has been activated!");
     }
 
+    
+    if(rePin_ == NOT_A_PIN){
+        autoModule_ = false; //Is the module an auto switching between tx and RX ?
+    }else{
+        pinMode(rePin_, OUTPUT);
+        autoModule_ = true;
+    }
+
+    pinMode(txPin_, OUTPUT);
+    pinMode(rxPin_, INPUT);
+    
+
+    if(autoModule_) digitalWrite(rePin_, HIGH); //Set the module in tx mode
+
+
+
     SerialCam.begin(baud_, SWSERIAL_8N1, rxPin_, txPin_);
 }
 
@@ -53,10 +69,11 @@ void PelcoCam::begin(){
  *  @param  command the wanted command (see header)
  *  @param  params Main parameter
  *  @param  params2 Second parameter for command that requires 2 parameters
+ *  @param  params2 Second parameter for command that requires 2 parameters
  * 
  */
 
-void PelcoCam::send_command(uint8_t command, uint8_t params, uint8_t params2){
+void PelcoCam::send_command(uint8_t command, uint8_t params, uint8_t params2, bool request){
   messToCamera[0] = 0xFF;
   messToCamera[1] = Address_;
 
@@ -91,13 +108,14 @@ void PelcoCam::send_command(uint8_t command, uint8_t params, uint8_t params2){
   }
 
   SerialCam.write(messToCamera, sizeof(messToCamera));
+  if(!request) delay(10); //delay because the camera respond back TODO: check reponse and delete the relay
 }
 
 /*!
  *  @brief  Send a query to the camera and reads the response
  * 
  *  @param  request the wanted reponse (see header)
- *  @param  timeout default 1000; timout for waiting a byte
+ *  @param  timeout default 1000; timeout for waiting a byte
  *  @param  maxbuffer Maximum size of the buffer; defaut 20
  * 
  * @return true if succeded, false if an error occured
@@ -115,24 +133,36 @@ int PelcoCam::send_request(uint8_t request, uint timeout, uint maxbuffer){
         return -1;
     }
 
-    send_command(request); //Send the query
+    send_command(request, 0x00, 0x00, true); //Send the query
 
-    while (!SerialCam.available()){//Wait for the first bit
+    if(autoModule_) digitalWrite(rePin_, LOW); //Set the module at RX mode
+
+    byte buffer[maxbuffer]; // Buffer for the reception from the camera
+    uint index = 0;
+
+
+     while (!SerialCam.available()){//Wait for the first bit
         if (timeout==0){ //If timeout is reached
-            if(log_messages_) Serial.print("ERROR timout reached");
+            if(log_messages_) Serial.println("ERROR timout reached");
+            if(autoModule_) digitalWrite(rePin_, HIGH); //set back at TX mode
             return -1;
         }
         timeout--;
         delayMicroseconds(10);
     }
 
-    byte buffer[maxbuffer]; // Buffer for the reception from the camera
-    uint index = 0;
-
-     while(SerialCam.available()){//Do it until there is no more things to read
+    //////Old solution
+/*      while(SerialCam.available()){//Do it until there is no more things to read
         buffer[index]=SerialCam.read();
+        Serial.printf("%02X ",buffer[index]);
         index++;
-     } 
+     }  */
+
+     SerialCam.readBytes(buffer, 7);//Apparently this works
+
+    if(autoModule_) digitalWrite(rePin_, HIGH); //set back at TX mode
+
+    int command_index = searchIndex(buffer, 0x59);//Looks up where is the index of the response command
 
     /* A theorical response:
     FF   00   59      4A  13  B7
@@ -141,8 +171,6 @@ int PelcoCam::send_request(uint8_t request, uint timeout, uint maxbuffer){
     A practical response (what does the arduino reads):
         FF 00 FF 00 59 4A 13 B7 FF 01 48
     */
-
-    int command_index = searchIndex(buffer, 0x59);//Looks up where is the index of the response command
 
     if(command_index == -1 //Checks if found
     || command_index < 3  //Checks if the reponse byte is in the right place
@@ -173,8 +201,13 @@ int PelcoCam::send_request(uint8_t request, uint timeout, uint maxbuffer){
         Serial.println();
     }
 
-    return messFromcamera[4]; //Returns MSB
+
+
+    return messFromcamera[4]; //Return MSB data
 }
+
+
+
 
 void PelcoCam::send_raw(String hex_string){
     hex_string.replace(" ", ""); //Replace spaces
