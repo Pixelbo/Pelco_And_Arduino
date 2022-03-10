@@ -56,6 +56,13 @@ private:
         0x00  // Checksum: add all byte except sync and then modulo 0x100
     };
 
+    uint8_t ACKmessFromCamera[4] = {
+        0x00, //sync byte
+        0x00, //Adress ?
+        0x00, // 0?
+        0x00  //Checksum taken for the previous message
+    };
+
     int searchIndex(byte look_array[], byte value);
 
 public:
@@ -64,7 +71,7 @@ public:
 
     bool send_command(uint8_t command, uint8_t params = 0x00, uint8_t params2 = 0x00, bool request = false);
     int send_request(uint8_t request, uint timeout = 1000, uint max_buffer = 20);
-    void send_raw(String hex_string);
+    void send_raw(String hex_string); // TODO: get ACK
 };
 
 #endif
