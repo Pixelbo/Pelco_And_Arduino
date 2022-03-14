@@ -63,13 +63,13 @@ private:
         0x00  //Checksum taken for the previous message
     };
 
-    int searchIndex(byte look_array[], byte value);
+    int searchIndex(const byte look_array[], byte value);
 
 public:
     PelcoCam(uint8_t address, uint32_t config, uint8_t txPin, uint8_t rxPin, bool log_messages = false, uint8_t readEnPin = NOT_A_PIN);
     void begin();
 
-    bool send_command(uint8_t command, uint8_t params = 0x00, uint8_t params2 = 0x00, bool request = false);
+    bool send_command(uint8_t command, uint8_t data1 = 0x00, uint8_t data2 = 0x00, bool request = false);
     int send_request(uint8_t request, uint timeout = 1000, uint max_buffer = 20);
     void send_raw(String hex_string); // TODO: get ACK
 };
