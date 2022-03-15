@@ -151,7 +151,7 @@ bool PelcoCam::send_command(uint8_t command, uint8_t data1, uint8_t data2, bool 
 
     SerialCam.write(messToCamera, sizeof(messToCamera)); //Write to the camera
 
-    if (!request) {          // Check the response of the camera
+    if (!request) {// Check the response of the camera only if it isn't a request
         int timeout = 10000; // 10 millissecond wait
 
         if (!autoModule_)
@@ -171,7 +171,7 @@ bool PelcoCam::send_command(uint8_t command, uint8_t data1, uint8_t data2, bool 
             delayMicroseconds(10);
         }
 
-        SerialCam.readBytes(ACKmessFromCamera, 4);
+        SerialCam.readBytes(ACKmessFromCamera, 4); //General response is 4 byte
 
         if (!autoModule_)
             digitalWrite(rePin_, HIGH); // set back at TX mode
@@ -193,7 +193,7 @@ bool PelcoCam::send_command(uint8_t command, uint8_t data1, uint8_t data2, bool 
             return false;
         }
 
-        if (ACKmessFromCamera[2] != 0x00) {//check the always 0 byte
+        if (ACKmessFromCamera[2] != 0x00) {//check the always 0 byte (alarm byte)
             if (log_messages_)
                 Serial.printf(
                     "Cam %i: ERROR Could not verify camera reponse: bad null ???? (is camera well plugged in?)\n",
@@ -225,7 +225,7 @@ bool PelcoCam::send_command(uint8_t command, uint8_t data1, uint8_t data2, bool 
  * @return true if succeded, false if an error occured
  */
 
-int PelcoCam::send_request(uint8_t request, uint timeout, uint maxbuffer) {
+uint16_t PelcoCam::send_request(uint8_t request, uint timeout, uint maxbuffer) {
     byte response_command;
 
     if (searchIndex(QUERY_CMND, request)!=-1) {
@@ -268,14 +268,6 @@ int PelcoCam::send_request(uint8_t request, uint timeout, uint maxbuffer) {
 
     int command_index = searchIndex(buffer, 0x59); // Looks up where is the index of the response command
 
-    /* A theorical response:
-    FF   00   59      4A  13  B7
-    sync null command msb lsb checksum
-
-    A practical response (what does the arduino reads):
-        FF 00 FF 00 59 4A 13 B7 FF 01 48
-    */
-
     if (command_index == -1) { // Checks if found
 
         if (log_messages_)
@@ -304,10 +296,12 @@ int PelcoCam::send_request(uint8_t request, uint timeout, uint maxbuffer) {
         Serial.println();
     }
 
-    return messFromcamera[5]; // Return LSB data
+    return (uint16_t) (messFromcamera[4] << 8 | messFromcamera[5]); // Return LSB data
 }
 
-void PelcoCam::send_raw(String hex_string) {
+
+////////todo get the response if it is a query or extended one!!
+bool PelcoCam::send_raw(String hex_string) {
     hex_string.replace(" ", ""); // Replace spaces
 
     int size = hex_string.length() / 2; // Size of the string without space
@@ -343,6 +337,8 @@ void PelcoCam::send_raw(String hex_string) {
     }
     // write the command to the camera
     SerialCam.write(raw_command, sizeof(raw_command));
+
+    return true;
 }
 
 /*!

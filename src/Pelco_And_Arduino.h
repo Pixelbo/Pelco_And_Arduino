@@ -70,8 +70,8 @@ public:
     void begin();
 
     bool send_command(uint8_t command, uint8_t data1 = 0x00, uint8_t data2 = 0x00, bool request = false);
-    int send_request(uint8_t request, uint timeout = 1000, uint max_buffer = 20);
-    void send_raw(String hex_string); // TODO: get ACK
+    uint16_t send_request(uint8_t request, uint timeout = 1000, uint max_buffer = 20);
+    bool send_raw(String hex_string); // TODO: get ACK
 };
 
 #endif
