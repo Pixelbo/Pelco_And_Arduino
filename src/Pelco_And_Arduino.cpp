@@ -47,7 +47,7 @@ PelcoCam::PelcoCam(uint8_t address, uint32_t config, uint8_t txPin, uint8_t rxPi
 
 void PelcoCam::begin() {
     if (log_messages_) {
-        Serial.begin(115200);
+        if(Serial) Serial.begin(115200);
         Serial.printf("Message log has been activated for the camera %02X !\n", address_);
     }
 
@@ -98,49 +98,50 @@ void PelcoCam::begin() {
  *
  */
 
-bool PelcoCam::send_command(uint8_t command, uint8_t data1, uint8_t data2, bool request) {
-    messToCamera[0] = 0xFF;         //The first byte is always FF (sync)
-    messToCamera[1] = address_;     // the second is the adress
+bool PelcoCam::send_command(uint8_t command, uint16_t data1, uint8_t data2, bool request) {
+    messToCamera[0] = 0xFF;     // The first byte is always FF (sync)
+    messToCamera[1] = address_; // the second is the adress
 
-    //Special commands handling:
-
-    if(searchIndex(CMND1, command)!=-1){
-        messToCamera[2] = command - 0b01100000; //Minus the thing that differentiate from others
+    // Special commands handling:
+    if (searchIndex(CMND1, command) != -1) {
+        messToCamera[2] = command - 0b01100000; // Minus the thing that differentiate from others
         messToCamera[3] = 0x00;
         messToCamera[4] = 0x00;
         messToCamera[5] = 0x00;
-    }else{//that means command is the byte 4
+    } else { // that means command is the byte 4
+
         messToCamera[2] = 0x00;
         messToCamera[3] = command;
-
-        if(searchIndex(DATA1, command)!=-1){
+        if (searchIndex(DATA1, command) != -1) {
             messToCamera[4] = data1;
             messToCamera[5] = 0x00;
-        }else if(searchIndex(DATA_BOTH, command)!=-1){
+        } else if (searchIndex(DATA_BOTH, command) != -1) {
             messToCamera[4] = data1;
             messToCamera[5] = data2;
-        }else if(searchIndex(SETPOS, command)!=-1){
-            messToCamera[4] = (uint8_t) (data1 >> 8) & 0x00FF; // Get MSB
-            messToCamera[5] = (uint8_t) data1 & 0x00FF; // Get LSB
-        }else if(searchIndex(QUERY_CMND, command)!=-1){
-            if(log_messages_) Serial.printf("Cam %i: You are doing an query into send command ??????????", address_);
+        } else if (searchIndex(SETPOS, command) != -1) {
+            uint angle = (uint16_t)(data1 % 35999); // Centième de degrès! avec max = 35999 (359.99 deg)
+
+            messToCamera[4] = (uint8_t)((angle >> 0x08) & 0x00FF); // Get MSB
+            messToCamera[5] = (uint8_t)(angle & 0x00FF);           // Get LSB
+            Serial.printf(" %X", angle);
+            Serial.printf(" %X", messToCamera[4]);
+            Serial.printf(" %X\n", messToCamera[5]);
+        } else if (searchIndex(QUERY_CMND, command) != -1) {
+            if (log_messages_)
+                Serial.printf("Cam %i: You are doing an query into send command ??????????", address_);
             return false;
-        }else{
-            if(log_messages_) Serial.printf("Cam %i: No vlaid command? ??????????", address_);
-            return false;
+        } else {
+            messToCamera[4] = 0x00;
+            messToCamera[5] = data1;
         }
     }
 
     //////
 
-    messToCamera[6] = (messToCamera[1] 
-                     + messToCamera[2] 
-                     + messToCamera[3] 
-                     + messToCamera[4] 
-                     + messToCamera[5]) % 0x100; // Checksum modulo 0x100
+    messToCamera[6] = (messToCamera[1] + messToCamera[2] + messToCamera[3] + messToCamera[4] + messToCamera[5]) %
+                      0x100; // Checksum modulo 0x100
 
-
-    if (log_messages_) { //log the message
+    if (log_messages_) { // log the message
         Serial.printf("Cam %i: Sending message: ", address_);
         for (int i = 0; i < 7; i++) {
             Serial.printf("%02X", messToCamera[i]);
@@ -149,9 +150,9 @@ bool PelcoCam::send_command(uint8_t command, uint8_t data1, uint8_t data2, bool 
         Serial.println();
     }
 
-    SerialCam.write(messToCamera, sizeof(messToCamera)); //Write to the camera
+    SerialCam.write(messToCamera, sizeof(messToCamera)); // Write to the camera
 
-    if (!request) {// Check the response of the camera only if it isn't a request
+    if (!request) {          // Check the response of the camera only if it isn't a request
         int timeout = 10000; // 10 millissecond wait
 
         if (!autoModule_)
@@ -171,21 +172,20 @@ bool PelcoCam::send_command(uint8_t command, uint8_t data1, uint8_t data2, bool 
             delayMicroseconds(10);
         }
 
-        SerialCam.readBytes(ACKmessFromCamera, 4); //General response is 4 byte
+        SerialCam.readBytes(ACKmessFromCamera, 4); // General response is 4 byte
 
         if (!autoModule_)
             digitalWrite(rePin_, HIGH); // set back at TX mode
 
-        
         if (ACKmessFromCamera[0] != 0xFF) { // Check sync byte and checksum of the previous comand
-                if (log_messages_)
-                    Serial.printf(
-                        "Cam %i: ERROR Could not verify camera reponse: bad sync byte (is camera well plugged in?)\n",
-                        address_);
-                return false;
+            if (log_messages_)
+                Serial.printf(
+                    "Cam %i: ERROR Could not verify camera reponse: bad sync byte (is camera well plugged in?)\n",
+                    address_);
+            return false;
         }
 
-        if (ACKmessFromCamera[1] != address_) {//Check adress byte
+        if (ACKmessFromCamera[1] != address_) { // Check adress byte
             if (log_messages_)
                 Serial.printf(
                     "Cam %i: ERROR Could not verify camera reponse: bad address (is camera well plugged in?)\n",
@@ -193,7 +193,7 @@ bool PelcoCam::send_command(uint8_t command, uint8_t data1, uint8_t data2, bool 
             return false;
         }
 
-        if (ACKmessFromCamera[2] != 0x00) {//check the always 0 byte (alarm byte)
+        if (ACKmessFromCamera[2] != 0x00) { // check the always 0 byte (alarm byte)
             if (log_messages_)
                 Serial.printf(
                     "Cam %i: ERROR Could not verify camera reponse: bad null ???? (is camera well plugged in?)\n",
@@ -201,7 +201,7 @@ bool PelcoCam::send_command(uint8_t command, uint8_t data1, uint8_t data2, bool 
             return false;
         }
 
-        if (ACKmessFromCamera[3] != messToCamera[6]) {//Check the checksum
+        if (ACKmessFromCamera[3] != messToCamera[6]) { // Check the checksum
             if (log_messages_)
                 Serial.printf(
                     "Cam %i: ERROR Could not verify camera reponse: bad checksum (is camera well plugged in?)\n",
@@ -209,7 +209,7 @@ bool PelcoCam::send_command(uint8_t command, uint8_t data1, uint8_t data2, bool 
             return false;
         }
 
-        if (log_messages_) //log
+        if (log_messages_) // log
             Serial.printf("Cam %i: Message sent and ACK received!\n", address_);
         return true;
     }
@@ -228,8 +228,8 @@ bool PelcoCam::send_command(uint8_t command, uint8_t data1, uint8_t data2, bool 
 uint16_t PelcoCam::send_request(uint8_t request, uint timeout, uint maxbuffer) {
     byte response_command;
 
-    if (searchIndex(QUERY_CMND, request)!=-1) {
-        response_command == RESP_CMND[searchIndex(QUERY_CMND, request)]; //Magic!
+    if (searchIndex(QUERY_CMND, request) != -1) {
+        response_command == RESP_CMND[searchIndex(QUERY_CMND, request)]; // Magic!
     } else {
         if (log_messages_)
             Serial.printf("Cam %i: No valid request provided\n", address_);
@@ -296,9 +296,8 @@ uint16_t PelcoCam::send_request(uint8_t request, uint timeout, uint maxbuffer) {
         Serial.println();
     }
 
-    return (uint16_t) (messFromcamera[4] << 8 | messFromcamera[5]); // Return LSB data
+    return (uint16_t)((((uint16_t)messFromcamera[4]) << 8) | ((uint16_t)messFromcamera[5])); // Return LSB data
 }
-
 
 ////////todo get the response if it is a query or extended one!!
 bool PelcoCam::send_raw(String hex_string) {
@@ -315,14 +314,17 @@ bool PelcoCam::send_raw(String hex_string) {
         raw_command[i] = (byte)strtol(buffer, NULL, 16); // conversion into byte
     }
 
-    if (raw_command[0] != 0xFF)
-        return; // Check sync byte
+    if (raw_command[0] != 0xFF) {
+        if (log_messages_)
+            Serial.printf("Cam %i: Wrong sync byte, updating to right sync byte\n", address_);
+        raw_command[0] = 0xFF;
+    }
 
     /////Check checksum
     uint8_t checksum = (raw_command[1] + raw_command[2] + raw_command[3] + raw_command[4] + raw_command[5]) % 0x100;
     if (checksum != raw_command[6]) {
         if (log_messages_)
-            Serial.printf("Cam %i: Wrong chacksum, updating to right checksum\n", address_);
+            Serial.printf("Cam %i: Wrong checksum, updating to right checksum\n", address_);
 
         raw_command[6] = checksum;
     }
@@ -351,7 +353,8 @@ bool PelcoCam::send_raw(String hex_string) {
  */
 
 int PelcoCam::searchIndex(const byte look_array[], byte value) {
-    for (int i = 0; i < sizeof(look_array) / sizeof(look_array[0]); i++) {
+    int i = 0;
+    for (i = 0; i <= (sizeof(look_array) / sizeof(look_array[0])); i++) {
         if (look_array[i] == value) {
             return i;
         }

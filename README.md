@@ -36,43 +36,4 @@ About the modules for RS485, I'm working with a standart MAX485 chip but I'll te
 
 ## Exemple
 
-```arduino
-    #include "Arduino.h"
-    #include <Pelco_And_Arduino.h>
-
-    int Pan_position = 0;
-
-    PelcoCam PelcoCam(0x01,       //Address of the camera
-                    PELCO_D9600,//Config
-                    32,         //TX pin
-                    33,         //RX pin
-                    true,       //Enable logging?
-                    25);        //RE pin for manual switching modules
-
-    void setup() {
-
-        //Begin the serial communication If you enabled logging, no need to    begin the normal serial
-        PelcoCam.begin(); 
-
-        //Send stop, send_command will return a bool that indicates if the cameras sended its ACK
-        while (!PelcoCam.send_command(STOP)) { 
-            Serial.println("Camera not plugged?");
-            delay(1000);
-        }
-        Serial.println("Init Finished!");
-    }
-    void loop() {
-    
-        //Pan to the left with max speed before turbo
-        PelcoCam.send_command(PAN_L, 0x3F); 
-
-        //send a request about the pan position
-        Pan_position = PelcoCam.send_request(QUERY_PAN);   
-        Serial.println(Pan_position);
-
-        delay(1000);
-        
-        PelcoCam.send_command(STOP); //Stop the camera
-        delay(1000);
-    }
-```
+go to the examples folder

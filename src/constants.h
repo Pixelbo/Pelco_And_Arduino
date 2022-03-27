@@ -10,8 +10,8 @@
 #define IRIS_O 0x62 //0x02 + 0b0110 0000
 #define IRIS_C 0x64 //0x04 + 0b0110 0000
 
-#define OFF 0x68 //0x08 + 0b0110 0000
-#define ON 0xE8  //0x88 + 0b0110 0000
+#define OFF 0x68 //0x08 + 0b0110 0000 //What does it do?
+#define ON 0xE8  //0x88 + 0b0110 0000 //What does it do?
 
 //////////////////////////////////////CMND2
 /////Basic commands
@@ -30,8 +30,9 @@
 
 #define PAN_L_TILT_U 0x0C
 #define PAN_R_TILT_U 0x0A
-#define PAN_L_TILT_D 0x14
 #define PAN_R_TILT_D 0x12
+#define PAN_L_TILT_D 0x14
+
 
 /////Complex commands
 #define SET_PRESET 0x03  // byte6: preset id
@@ -77,9 +78,9 @@
 #define QUERY 0x45 //???????????
 
 #define ZERO_POS 0x49
-#define SET_PAN 0x4B  // b5: MSB and b6: LSB
+#define SET_PAN 0x4B  // b5: MSB and b6: LSB //max 8C 59 todo: check msb and lsb
 #define SET_TILT 0x4D // b5: MSB and b6: LSB
-#define SET_ZOOM 0x4F // b5: MSB and b6: LSB
+#define SET_ZOOM 0x4F // b5: MSB and b6: LSB MAX:  (desired zoom position / zoom limit) * 65535
 
 #define QUERY_PAN 0x51
 #define QUERY_TILT 0x53
@@ -97,10 +98,10 @@ a command
 //Special commands:
 
 const PROGMEM byte CMND1[5] = {FOCUS_N, IRIS_O, IRIS_C, OFF, ON}; //List of all commands that go on the byte3; a list with command 2 is not required, a bit of logic please
+const PROGMEM byte DATA1[2] = {PAN_L, PAN_R}; //List of all commands that use ONLY the DATA1 for data pass
 
 const PROGMEM byte SETPOS[3] = {SET_PAN, SET_TILT, SET_ZOOM}; //List of all command that require an MSB and LSB
 
-const PROGMEM byte DATA1[2] = {PAN_L, PAN_R}; //List of all commands that use ONLY the DATA1 for data pass
 const PROGMEM byte DATA_BOTH[5]= {PAN_L_TILT_D, PAN_L_TILT_U, PAN_R_TILT_D, PAN_R_TILT_U, WRITE_CHAR};//List of all commands that use the DATA1 and DATA2 for data pass (excluding the SETPOS' commands)
 
 const PROGMEM byte PRESET_CMND[3] = {SET_PRESET, CLR_PRESET, GOTO_PRESET}; //will I use it?
