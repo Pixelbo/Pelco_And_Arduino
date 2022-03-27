@@ -30,9 +30,9 @@ Anyway, here the table of contents:
 
 This is a bit obvious but you'll need a Pelco camera, the one I use the ES4036.
 
-The important thing is to set the camera is RS485 biderectional and with the baud of your chossing. For now, the lib only support Pelco-D protocol.
+The important thing is to set the camera is RS485 biderectional and with the baud of your choosing. For now, the lib only support Pelco-D protocol.
 
-About the modules for RS485, I'm working with a standart MAX485 chip but I'll test a more advanced module on the future.
+About the modules for RS485, I'm working with a standart MAX485 chip but I'll test a more advanced module on the future (a seed-groove max485 module).
 
 ## Exemple
 
