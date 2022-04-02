@@ -111,9 +111,6 @@ const PROGMEM byte RESP_CMND[3] = {RESP_PAN, RESP_TILT, RESP_ZOOM};
 
 ///////////////////////////////////////////////// Constants for the config parameter
 
-#define D true
-#define P false
-
 // D-protocol baud self-explaintory
 #define PELCO_D2400 0xD24
 #define PELCO_D4800 0xD48

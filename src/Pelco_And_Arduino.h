@@ -22,7 +22,7 @@ class PelcoCam
 {
 
 private:
-    SoftwareSerial SerialCam;
+    SoftwareSerial* SerialCam;
 
     uint8_t address_;
     uint32_t config_;
@@ -34,7 +34,7 @@ private:
     bool log_messages_;
     bool autoModule_;
 
-    bool protocol;
+    char log_buffer[200];
 
     uint8_t messToCamera[7] = {
         0x00, // sync byte
@@ -70,7 +70,7 @@ public:
     void begin();
 
     bool send_command(uint8_t command, uint16_t data1 = 0x00, uint8_t data2 = 0x00, bool request = false);
-    uint16_t send_request(uint8_t request, uint timeout = 1000, uint max_buffer = 20);
+    uint16_t send_request(uint8_t request, int timeout = 1000, int max_buffer = 20);
     bool send_raw(String hex_string); // TODO: get ACK
 };
 
