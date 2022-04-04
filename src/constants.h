@@ -97,17 +97,19 @@ a command
  */
 //Special commands:
 
-const PROGMEM byte CMND1[5] = {FOCUS_N, IRIS_O, IRIS_C, OFF, ON}; //List of all commands that go on the byte3; a list with command 2 is not required, a bit of logic please
-const PROGMEM byte DATA1[2] = {PAN_L, PAN_R}; //List of all commands that use ONLY the DATA1 for data pass
+const byte CMND1[5] PROGMEM = {FOCUS_N, IRIS_O, IRIS_C, OFF, ON}; //List of all commands that go on the byte3; a list with command 2 is not required, a bit of logic please
+const byte DATA1[2] PROGMEM = {PAN_L, PAN_R}; //List of all commands that use ONLY the DATA1 for data pass
 
-const PROGMEM byte SETPOS[3] = {SET_PAN, SET_TILT, SET_ZOOM}; //List of all command that require an MSB and LSB
+const byte SETPOS[3] PROGMEM = {SET_PAN, SET_TILT, SET_ZOOM}; //List of all command that require an MSB and LSB
 
-const PROGMEM byte DATA_BOTH[5]= {PAN_L_TILT_D, PAN_L_TILT_U, PAN_R_TILT_D, PAN_R_TILT_U, WRITE_CHAR};//List of all commands that use the DATA1 and DATA2 for data pass (excluding the SETPOS' commands)
+const byte DATA_BOTH[5] PROGMEM= {PAN_L_TILT_D, PAN_L_TILT_U, PAN_R_TILT_D, PAN_R_TILT_U, WRITE_CHAR};//List of all commands that use the DATA1 and DATA2 for data pass (excluding the SETPOS' commands)
 
-const PROGMEM byte PRESET_CMND[3] = {SET_PRESET, CLR_PRESET, GOTO_PRESET}; //will I use it?
+const byte RESP_CMND[3] PROGMEM = {RESP_PAN, RESP_TILT, RESP_ZOOM}; 
 
-const PROGMEM byte QUERY_CMND[3] = {QUERY_PAN, QUERY_TILT, QUERY_ZOOM}; 
-const PROGMEM byte RESP_CMND[3] = {RESP_PAN, RESP_TILT, RESP_ZOOM}; 
+const byte QUERY_CMND[3] PROGMEM = {QUERY_PAN, QUERY_TILT, QUERY_ZOOM}; 
+
+const byte PRESET_CMND[3] PROGMEM= {SET_PRESET, CLR_PRESET, GOTO_PRESET}; //will I use it?
+
 
 ///////////////////////////////////////////////// Constants for the config parameter
 

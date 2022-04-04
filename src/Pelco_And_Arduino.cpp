@@ -103,7 +103,7 @@ bool PelcoCam::send_command(uint8_t command, uint16_t data1, uint8_t data2, bool
     messToCamera[1] = address_; // the second is the adress
 
     // Special commands handling:
-    if (searchIndex(CMND1, command) != -1) {
+    if (searchIndexPROGMEM(CMND1, command) != -1) {
         messToCamera[2] = command - 0b01100000; // Minus the thing that differentiate from others
         messToCamera[3] = 0x00;
         messToCamera[4] = 0x00;
@@ -113,21 +113,21 @@ bool PelcoCam::send_command(uint8_t command, uint16_t data1, uint8_t data2, bool
         messToCamera[2] = 0x00;
         messToCamera[3] = command;
 
-        if (searchIndex(DATA1, command) != -1) {
+        if (searchIndexPROGMEM(DATA1, command) != -1) {
             messToCamera[4] = data1;
             messToCamera[5] = 0x00;
 
-        } else if (searchIndex(DATA_BOTH, command) != -1) {
+        } else if (searchIndexPROGMEM(DATA_BOTH, command) != -1) {
             messToCamera[4] = data1;
             messToCamera[5] = data2;
 
-        } else if (searchIndex(SETPOS, command) != -1) {
+        } else if (searchIndexPROGMEM(SETPOS, command) != -1) {
             uint16_t angle = (uint16_t)(data1 % 35999); // Centième de degrès! avec max = 35999 (359.99 deg)
 
             messToCamera[4] = (uint8_t)((angle >> 0x08) & 0x00FF); // Get MSB
             messToCamera[5] = (uint8_t)(angle & 0x00FF);           // Get LSB
 
-        } else if (searchIndex(QUERY_CMND, command) != -1) {
+        } else if ((searchIndexPROGMEM(QUERY_CMND, command) != -1 && !request)) {
             if (log_messages_) {
                 sprintf(log_buffer, "Cam %i: You are doing an query into send command ??????????", address_);
                 Serial.print(log_buffer);
@@ -164,7 +164,7 @@ bool PelcoCam::send_command(uint8_t command, uint16_t data1, uint8_t data2, bool
             digitalWrite(rePin_, LOW); // Set the module at RX mode
 
         while (!(*SerialCam).available()) { // Wait for the first bit
-            if (timeout == 0) {          // If timeout is reached
+            if (timeout == 0) {             // If timeout is reached
                 if (log_messages_) {
                     sprintf(
                         log_buffer,
@@ -243,33 +243,35 @@ bool PelcoCam::send_command(uint8_t command, uint16_t data1, uint8_t data2, bool
  * @return true if succeded, false if an error occured
  */
 
-uint16_t PelcoCam::send_request(uint8_t request, int timeout, int maxbuffer) {
+uint16_t PelcoCam::send_request(uint8_t request, int timeout) {
     byte response_command;
 
-    if (searchIndex(QUERY_CMND, request) != -1) {
-        response_command == RESP_CMND[searchIndex(QUERY_CMND, request)]; // Magic!
+    if (searchIndexPROGMEM(QUERY_CMND, request) != -1) {
+        response_command = pgm_read_byte(&RESP_CMND[searchIndexPROGMEM(QUERY_CMND, request)]); // Magic!
     } else {
-        if (log_messages_){
+        if (log_messages_) {
             sprintf(log_buffer, "Cam %i: No valid request provided\n", address_);
             Serial.print(log_buffer);
+            Serial.println(request);
         }
         return -1;
     }
 
     send_command(request, 0x00, 0x00, true); // Send the query
 
-    if (!autoModule_)
+    if (!autoModule_){
         digitalWrite(rePin_, LOW); // Set the module at RX mode
+    }
 
-    byte buffer[maxbuffer]; // Buffer for the reception from the camera
+    byte buffer[7]; // Buffer for the reception from the camera
 
     while (!(*SerialCam).available()) { // Wait for the first bit
-        if (timeout == 0) {          // If timeout is reached
-            if (log_messages_){
+        if (timeout == 0) {             // If timeout is reached
+            if (log_messages_) {
                 sprintf(log_buffer, "Cam %i: ERROR timout reached\n", address_);
                 Serial.print(log_buffer);
             }
-            if (!autoModule_){
+            if (!autoModule_) {
                 digitalWrite(rePin_, HIGH); // set back at TX mode
             }
             return -1;
@@ -286,14 +288,14 @@ uint16_t PelcoCam::send_request(uint8_t request, int timeout, int maxbuffer) {
 
     (*SerialCam).readBytes(buffer, 7); // Apparently this works
 
-    if (!autoModule_)
+    if (!autoModule_) {
         digitalWrite(rePin_, HIGH); // set back at TX mode
+    }
 
-    int command_index = searchIndex(buffer, 0x59); // Looks up where is the index of the response command
+    int command_index = searchIndex(buffer, response_command, 7); // Looks up where is the index of the response command
 
     if (command_index == -1) { // Checks if found
-
-        if (log_messages_){
+        if (log_messages_) {
             sprintf(log_buffer, "Cam %i: Warn: no reponse from camera (bad index)\n", address_);
             Serial.print(log_buffer);
         }
@@ -342,7 +344,7 @@ bool PelcoCam::send_raw(String hex_string) {
     }
 
     if (raw_command[0] != 0xFF) {
-        if (log_messages_){
+        if (log_messages_) {
             sprintf(log_buffer, "Cam %i: Wrong sync byte, updating to right sync byte\n", address_);
             Serial.print(log_buffer);
         }
@@ -352,7 +354,7 @@ bool PelcoCam::send_raw(String hex_string) {
     /////Check checksum
     uint8_t checksum = (raw_command[1] + raw_command[2] + raw_command[3] + raw_command[4] + raw_command[5]) % 0x100;
     if (checksum != raw_command[6]) {
-        if (log_messages_){
+        if (log_messages_) {
             sprintf(log_buffer, "Cam %i: Wrong checksum, updating to right checksum\n", address_);
             Serial.print(log_buffer);
         }
@@ -376,7 +378,7 @@ bool PelcoCam::send_raw(String hex_string) {
 }
 
 /*!
- *  @brief  Dearch a value trough a array of bytes
+ *  @brief  Search a value trough a array of bytes one function is for progmem the other one isn't for progmem
  *
  *  @param  look_array the array
  *  @param  value value to lookup
@@ -384,9 +386,21 @@ bool PelcoCam::send_raw(String hex_string) {
  * @return the index of the element found
  */
 
-int PelcoCam::searchIndex(const byte look_array[], byte value) {
+int PelcoCam::searchIndexPROGMEM(const byte look_array[], byte value) {
     int i = 0;
-    for (i = 0; i <= (sizeof(look_array) / sizeof(look_array[0])); i++) {
+    for (i = 0; i <= (sizeof(look_array) / sizeof(*look_array)); i++) {
+        if (pgm_read_byte(&look_array[i]) == value) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+int PelcoCam::searchIndex(byte look_array[], byte value, size_t size) {//For an x or y reason sizeof don't work properly
+
+    int i = 0;
+    for (i = 0; i <= (size); i++) {
+         
         if (look_array[i] == value) {
             return i;
         }
