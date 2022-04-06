@@ -33,7 +33,6 @@
 #define PAN_R_TILT_D 0x12
 #define PAN_L_TILT_D 0x14
 
-
 /////Complex commands
 #define SET_PRESET 0x03  // byte6: preset id
 #define CLR_PRESET 0x05  // byte6: preset id
