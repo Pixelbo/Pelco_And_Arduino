@@ -49,20 +49,20 @@ void PelcoCam::begin() {
     uint16_t baud;
 
     switch (config_) {
-    case PELCO_D2400:
-        baud = 2400;
-        break;
-    case PELCO_D4800:
-        baud = 4800;
-        break;
-    case PELCO_D9600:
-        baud = 9600;
-        break;
+        case PELCO_D2400:
+            baud = 2400;
+            break;
+        case PELCO_D4800:
+            baud = 4800;
+            break;
+        case PELCO_D9600:
+            baud = 9600;
+            break;
     }
 
     if (log_messages_) {
-        if (Serial) {
-            Serial.begin(baud);
+        if (!Serial) {
+            Serial.begin(115200);
         }
         sprintf(log_buffer, "Message log has been activated for the camera %02X !\n", address_);
         Serial.print(log_buffer);
