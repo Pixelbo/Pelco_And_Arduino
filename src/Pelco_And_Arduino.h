@@ -67,7 +67,7 @@ private:
     int searchIndexPROGMEM(const byte look_array[], byte value);
 
 public:
-    PelcoCam(uint8_t address, uint32_t config, uint8_t txPin, uint8_t rxPin, bool log_messages = false, uint8_t readEnPin = NOT_A_PIN);
+    PelcoCam(uint8_t address, uint32_t config, uint8_t rxPin, uint8_t txPin, bool log_messages = false, uint8_t readEnPin = NOT_A_PIN);
     void begin();
 
     bool send_command(uint8_t command, uint16_t data1 = 0x00, uint8_t data2 = 0x00, bool request = false);

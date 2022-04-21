@@ -5,16 +5,19 @@
 
 PelcoCam MyPelcoCam(01,       //Address of the camera
                     PELCO_D9600,//Config
-                    6,         //TX pin
-                    7,         //RX pin
+                    6,         //TX pin (Arduino to Cam)
+                    7,         //RX pin (Cam to Arduino)
                     false,       //Enable logging?
                     8);        // RE pin for manual switching modules set to -1 if it is a auto module (like a groove one)
 
 void setup() {
-    // Begin the serial communication If you enabled logging, no need to    begin the normal serial
-    MyPelcoCam.begin();
 
     Serial.begin(9600);
+    
+    // Begin the serial communication
+    MyPelcoCam.begin();
+
+    
     // Send stop, send_command will return a bool that indicates if the cameras sended its ACK
     // It's a good way to see if the camera is plugged in
     while (!MyPelcoCam.send_command(STOP)) {

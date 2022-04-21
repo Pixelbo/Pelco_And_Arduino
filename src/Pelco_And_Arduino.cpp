@@ -22,15 +22,15 @@
  *
  *  @param  Address The address of the camera
  *  @param  baud baud of the cameras
- *  @param  txPin the TX pin of the module (Arduino to Cam)
  *  @param  rxPin the RX pin of the module (Cam to Arduino)
+ *  @param  txPin the TX pin of the module (Arduino to Cam)
  *  @param  log_messages Print log messages of this camera
  *  @param  readEnPin Pin for RS485 modules that require toggle between rx and
  * tx   (RE and \DE pin of the module)
  *
  */
 
-PelcoCam::PelcoCam(uint8_t address, uint32_t config, uint8_t txPin, uint8_t rxPin, bool log_messages,
+PelcoCam::PelcoCam(uint8_t address, uint32_t config, uint8_t rxPin, uint8_t txPin, bool log_messages,
                    uint8_t readEnPin) {
     address_ = address;
     config_ = config;
@@ -168,7 +168,7 @@ bool PelcoCam::send_command(uint8_t command, uint16_t data1, uint8_t data2, bool
                 if (log_messages_) {
                     sprintf(
                         log_buffer,
-                        "Cam %i: ERROR Could not verify camera reponse: timeout reached (is camera well plugged in?)\n",
+                        "Cam %i: ERROR Could not verify camera ACK: timeout reached (is camera well plugged in?)\n",
                         address_);
                     Serial.print(log_buffer);
                 }
@@ -179,16 +179,37 @@ bool PelcoCam::send_command(uint8_t command, uint16_t data1, uint8_t data2, bool
             timeout--;
             delayMicroseconds(10);
         }
+        if(log_messages_){
+            sprintf(
+                log_buffer,
+                "Cam %i: Reading Acknoledge from camera\n",
+                address_);
+            Serial.print(log_buffer);
+        }
 
         (*SerialCam).readBytes(ACKmessFromCamera, 4); // General response is 4 byte
 
         if (!autoModule_)
             digitalWrite(rePin_, HIGH); // set back at TX mode
 
+        if (log_messages_) {
+            sprintf(log_buffer, "Cam %i: Received ACK data (may be wrong):   ", address_);
+            Serial.print(log_buffer);
+
+            for (int i = 0; i < 7; i++) {
+                sprintf(log_buffer, "%02X ", messFromcamera[i]);
+                Serial.print(log_buffer);
+            }
+            Serial.println();
+
+        }
+        
+        
+
         if (ACKmessFromCamera[0] != 0xFF) { // Check sync byte and checksum of the previous comand
             if (log_messages_) {
                 sprintf(log_buffer,
-                        "Cam %i: ERROR Could not verify camera reponse: bad sync byte (is camera well plugged in?)\n",
+                        "Cam %i: ERROR Could not verify camera ACK: bad sync byte (is camera well plugged in?)\n",
                         address_);
                 Serial.print(log_buffer);
             }
@@ -198,7 +219,7 @@ bool PelcoCam::send_command(uint8_t command, uint16_t data1, uint8_t data2, bool
         if (ACKmessFromCamera[1] != address_) { // Check adress byte
             if (log_messages_) {
                 sprintf(log_buffer,
-                        "Cam %i: ERROR Could not verify camera reponse: bad address (is camera well plugged in?)\n",
+                        "Cam %i: ERROR Could not verify camera ACK: bad address (is camera well plugged in?)\n",
                         address_);
                 Serial.print(log_buffer);
             }
@@ -208,7 +229,7 @@ bool PelcoCam::send_command(uint8_t command, uint16_t data1, uint8_t data2, bool
         if (ACKmessFromCamera[2] != 0x00) { // check the always 0 byte (alarm byte)
             if (log_messages_) {
                 sprintf(log_buffer,
-                        "Cam %i: ERROR Could not verify camera reponse: bad null ???? (is camera well plugged in?)\n",
+                        "Cam %i: ERROR Could not verify camera ACK: bad null ???? (is camera well plugged in?)\n",
                         address_);
                 Serial.print(log_buffer);
             }
@@ -218,7 +239,7 @@ bool PelcoCam::send_command(uint8_t command, uint16_t data1, uint8_t data2, bool
         if (ACKmessFromCamera[3] != messToCamera[6]) { // Check the checksum
             if (log_messages_) {
                 sprintf(log_buffer,
-                        "Cam %i: ERROR Could not verify camera reponse: bad checksum (is camera well plugged in?)\n",
+                        "Cam %i: ERROR Could not verify camera ACK: bad checksum (is camera well plugged in?)\n",
                         address_);
                 Serial.print(log_buffer);
             }

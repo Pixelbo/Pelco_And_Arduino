@@ -34,6 +34,8 @@ The important thing is to set the camera is RS485 biderectional and with the bau
 
 About the modules for RS485, I'm working with a standart MAX485 chip but I'll test a more advanced module on the future (a seed-groove max485 module).
 
+Tested on Arduino UNO and ESP32
+
 ## Exemple
 
 go to the examples folder
