@@ -128,7 +128,7 @@ bool PelcoCamBus::send_command(uint8_t address, uint8_t command, uint16_t data1 
             messToCamera[4] = (uint8_t)((angle >> 0x08) & 0x00FF); // Get MSB
             messToCamera[5] = (uint8_t)(angle & 0x00FF);           // Get LSB
 
-        } else if ((searchIndexPROGMEM(QUERY_CMND, command) != -1 && !request)) {
+        } else if ((searchIndexPROGMEM(QUERY_CMND, command) != -1 && !disableACK)) {
             if (log_messages_) {
                 sprintf(log_buffer, "Cam %i: You are doing an query into send command ??????????", address);
                 Serial.print(log_buffer);
