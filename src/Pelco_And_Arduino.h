@@ -18,14 +18,11 @@
 
 #include "constants.h"
 
-class PelcoCam
+class PelcoCamBus
 {
 
 private:
-    SoftwareSerial* SerialCam;
-
-    uint8_t address_;
-    uint32_t config_;
+    SoftwareSerial* SerialCamBus;
 
     uint16_t txPin_;
     uint16_t rxPin_;
@@ -67,11 +64,11 @@ private:
     int searchIndexPROGMEM(const byte look_array[], byte value);
 
 public:
-    PelcoCam(uint8_t address, uint32_t config, uint8_t rxPin, uint8_t txPin, bool log_messages = false, uint8_t readEnPin = NOT_A_PIN);
-    void begin();
+    PelcoCamBus(uint8_t rxPin, uint8_t txPin, uint8_t readEnPin = NOT_A_PIN);
+    void begin(uint32_t config, bool log_messages = false);
 
-    bool send_command(uint8_t command, uint16_t data1 = 0x00, uint8_t data2 = 0x00, bool request = false);
-    uint16_t send_request(uint8_t request, int timeout = 1000);
+    bool send_command(uint8_t address, uint8_t command, uint16_t data1 = 0x00, uint8_t data2 = 0x00, bool request = false);
+    uint16_t send_request(uint8_t address, uint8_t request, int timeout = 1000);
     bool send_raw(String hex_string); // TODO: get ACK
 };
 
