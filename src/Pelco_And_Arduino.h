@@ -28,6 +28,7 @@ private:
     uint16_t rxPin_;
     uint16_t rePin_;
 
+    bool support_rx_;
     bool log_messages_;
     bool autoModule_;
 
@@ -67,7 +68,7 @@ public:
     PelcoCamBus(uint8_t rxPin, uint8_t txPin, uint8_t readEnPin = NOT_A_PIN);
     void begin(uint32_t config, bool log_messages = false);
 
-    bool send_command(uint8_t address, uint8_t command, uint16_t data1 = 0x00, uint8_t data2 = 0x00, bool request = false);
+    bool send_command(uint8_t address, uint8_t command, uint16_t data1 = 0x00, uint8_t data2 = 0x00, bool disableACK = false);
     uint16_t send_request(uint8_t address, uint8_t request, int timeout = 1000);
     bool send_raw(String hex_string); // TODO: get ACK
 };

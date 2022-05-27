@@ -99,7 +99,7 @@ void PelcoCamBus::begin(uint32_t config, bool log_messages = false) {
  */
 
 bool PelcoCamBus::send_command(uint8_t address, uint8_t command, uint16_t data1 = 0x00, uint8_t data2 = 0x00,
-                               bool request) {
+                               bool disableACK) {
     messToCamera[0] = 0xFF;    // The first byte is always FF (sync)
     messToCamera[1] = address; // the second is the adress
 
@@ -158,7 +158,7 @@ bool PelcoCamBus::send_command(uint8_t address, uint8_t command, uint16_t data1 
 
     (*SerialCamBus).write(messToCamera, sizeof(messToCamera)); // Write to the camera
 
-    if (!request) { // Check the response of the camera only if it isn't a request (aka a query aka check for ack)
+    if (!disableACK) { // Check the response of the camera only if it isn't a request (aka a query aka check for ack)
         int timeout = 10000; // 10 millissecond wait
 
         if (!autoModule_)
