@@ -6,6 +6,7 @@
 # Datatypes (KEYWORD1)
 #######################################
 
+PelcoBus	KEYWORD1
 PelcoCam	KEYWORD1
 
 #######################################

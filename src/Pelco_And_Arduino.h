@@ -18,7 +18,7 @@
 
 #include "constants.h"
 
-class PelcoCamBus
+class PelcoBus
 {
 
 private:
@@ -65,11 +65,18 @@ private:
     int searchIndexPROGMEM(const byte look_array[], byte value);
 
 public:
-    PelcoCamBus(uint8_t rxPin, uint8_t txPin, uint8_t readEnPin = NOT_A_PIN);
+    PelcoBus(uint8_t txPin, uint8_t rxPin, uint8_t readEnPin = NOT_A_PIN);
+
+    struct PelcoCam{
+        uint8_t address;
+        bool disable_ack;
+    };
+    
+
     void begin(uint32_t config, bool log_messages = false);
 
-    bool send_command(uint8_t address, uint8_t command, uint16_t data1 = 0x00, uint8_t data2 = 0x00, bool disableACK = false);
-    uint16_t send_request(uint8_t address, uint8_t request, int timeout = 1000);
+    bool send_command(PelcoBus::PelcoCam camera, uint8_t command, uint16_t data1 = 0x00, uint8_t data2 = 0x00, bool disableACK = false);
+    uint16_t send_request(PelcoBus::PelcoCam camera, uint8_t request, int timeout = 1000);
     bool send_raw(String hex_string); // TODO: get ACK
 };
 

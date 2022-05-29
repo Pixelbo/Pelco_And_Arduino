@@ -29,7 +29,7 @@
  *
  */
 
-PelcoCamBus::PelcoCamBus(uint8_t rxPin, uint8_t txPin, uint8_t readEnPin) {
+PelcoBus::PelcoBus(uint8_t txPin, uint8_t rxPin, uint8_t readEnPin) {
     txPin_ = txPin;
     rxPin_ = rxPin;
     rePin_ = readEnPin;
@@ -40,7 +40,7 @@ PelcoCamBus::PelcoCamBus(uint8_t rxPin, uint8_t txPin, uint8_t readEnPin) {
  *
  */
 
-void PelcoCamBus::begin(uint32_t config, bool log_messages = false) {
+void PelcoBus::begin(uint32_t config, bool log_messages = false) {
     uint16_t baud;
 
     switch (config) {
@@ -98,8 +98,11 @@ void PelcoCamBus::begin(uint32_t config, bool log_messages = false) {
  *
  */
 
-bool PelcoCamBus::send_command(uint8_t address, uint8_t command, uint16_t data1 = 0x00, uint8_t data2 = 0x00,
+bool PelcoBus::send_command(PelcoBus::PelcoCam camera, uint8_t command, uint16_t data1 = 0x00, uint8_t data2 = 0x00,
                                bool disableACK) {
+
+    uint8_t address = camera.address;
+
     messToCamera[0] = 0xFF;    // The first byte is always FF (sync)
     messToCamera[1] = address; // the second is the adress
 
@@ -158,7 +161,7 @@ bool PelcoCamBus::send_command(uint8_t address, uint8_t command, uint16_t data1 
 
     (*SerialCamBus).write(messToCamera, sizeof(messToCamera)); // Write to the camera
 
-    if (!disableACK) { // Check the response of the camera only if it isn't a request (aka a query aka check for ack)
+    if ((!disableACK) && (!camera.disable_ack)) { // Check the response of the camera only if it isn't a request or the camera does not support return
         int timeout = 10000; // 10 millissecond wait
 
         if (!autoModule_)
@@ -258,8 +261,9 @@ bool PelcoCamBus::send_command(uint8_t address, uint8_t command, uint16_t data1 
  * @return true if succeded, false if an error occured
  */
 
-uint16_t PelcoCamBus::send_request(uint8_t address, uint8_t request, int timeout = 1000) {
+uint16_t PelcoBus::send_request(PelcoBus::PelcoCam camera, uint8_t request, int timeout = 1000) {
     byte response_command;
+    uint8_t address = camera.address;
 
     if (searchIndexPROGMEM(QUERY_CMND, request) != -1) {
         response_command = pgm_read_byte(&RESP_CMND[searchIndexPROGMEM(QUERY_CMND, request)]); // Magic!
@@ -272,7 +276,7 @@ uint16_t PelcoCamBus::send_request(uint8_t address, uint8_t request, int timeout
         return -1;
     }
 
-    send_command(request, 0x00, 0x00, true); // Send the query
+    send_command(camera, request, 0x00, 0x00, true); // Send the query with ack diabled
 
     if (!autoModule_) {
         digitalWrite(rePin_, LOW); // Set the module at RX mode
@@ -344,7 +348,7 @@ uint16_t PelcoCamBus::send_request(uint8_t address, uint8_t request, int timeout
 }
 
 ////////todo get the response if it is a query or extended one!!
-bool PelcoCamBus::send_raw(String hex_string) {
+bool PelcoBus::send_raw(String hex_string) {
     hex_string.replace(" ", ""); // Replace spaces
 
     int size = hex_string.length() / 2; // Size of the string without space
@@ -403,7 +407,7 @@ bool PelcoCamBus::send_raw(String hex_string) {
  * @return the index of the element found
  */
 
-int PelcoCamBus::searchIndexPROGMEM(const byte look_array[], byte value) {
+int PelcoBus::searchIndexPROGMEM(const byte look_array[], byte value) {
     int i = 0;
     for (i = 0; i <= (sizeof(look_array) / sizeof(*look_array)); i++) {
         if (pgm_read_byte(&look_array[i]) == value) {
@@ -413,7 +417,7 @@ int PelcoCamBus::searchIndexPROGMEM(const byte look_array[], byte value) {
     return -1;
 }
 
-int PelcoCamBus::searchIndex(byte look_array[], byte value,
+int PelcoBus::searchIndex(byte look_array[], byte value,
                              size_t size) { // For an x or y reason sizeof don't work properly
 
     int i = 0;
