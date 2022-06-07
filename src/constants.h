@@ -120,6 +120,4 @@ const byte PRESET_CMND[3] PROGMEM= {SET_PRESET, CLR_PRESET, GOTO_PRESET}; //will
 
 //////////////////////////////////////////::
 
-#define NOT_A_PIN -1
-
 #endif
