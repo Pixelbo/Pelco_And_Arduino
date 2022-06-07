@@ -42,7 +42,7 @@ bool PelcoCam::send_command(uint8_t command, uint16_t data1 = 0x00, uint8_t data
     Serial.print("ah");
     Serial.print(log_buffer);
     delay(1000);
-    Serial.println("bbbbbb");
+    Serial.println("bbbb");
     bool test = PelcoBus::command(address_, disable_ack_, command, data1, data2);
     return test;
 }
