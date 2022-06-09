@@ -15,7 +15,7 @@
 #include <SoftwareSerial.h>
 
 #include "Arduino.h"
-#include "constants.h"
+
 #include "PelcoBus.h"
 
 /*!
@@ -29,10 +29,6 @@
  * tx   (RE and \DE pin of the module)
  *
  */
-
-PelcoBus::PelcoBus() {
-    return;
-}
 
 PelcoBus::PelcoBus(uint8_t txPin, uint8_t rxPin, uint8_t readEnPin) {
     txPin_ = txPin;
@@ -161,6 +157,10 @@ bool PelcoBus::command(uint8_t address, bool disableACK , uint8_t command, uint1
 
     (*SerialCamBus).write(messToCamera, sizeof(messToCamera)); // Write to the camera
 
+
+    ///////////////////////////////////
+
+    
     if ((!disableACK) && (!disableACK)) { // Check the response of the camera only if it isn't a request or the camera does not support return
         int timeout = 10000; // 10 millissecond wait
 

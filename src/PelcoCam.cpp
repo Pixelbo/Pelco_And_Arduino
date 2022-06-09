@@ -13,13 +13,15 @@
 #include <SoftwareSerial.h>
 
 #include "Arduino.h"
-#include "constants.h"
 
+#include "constants.h"
 #include "PelcoCam.h"
+
 
 // Only serves as a wrapper for the PelcoBus class
 
-PelcoCam::PelcoCam(uint8_t address, bool disable_ack): PelcoBus(PelcoBus::rxPin_, PelcoBus::txPin_, PelcoBus::rePin_){
+PelcoCam::PelcoCam(PelcoBus *bus,  uint8_t address, bool disable_ack = false){
+    bus_ = bus; //Get the address (pointer) of the PelcoBus class
     address_ = address;
     disable_ack_ = disable_ack;
 }
@@ -34,17 +36,12 @@ bool PelcoCam::available() { // Returns true if there's a ACK
         }
         return false;
     }
-        return PelcoBus::command(address_, disable_ack_, DUMMY);
+        return bus_->command(address_, disable_ack_, DUMMY);
     
 }
 
-bool PelcoCam::send_command(uint8_t command, uint16_t data1 = 0x00, uint8_t data2 = 0x00) {
-    Serial.print("ah");
-    Serial.print(log_buffer);
-    delay(1000);
-    Serial.println("bbbb");
-    bool test = PelcoBus::command(address_, disable_ack_, command, data1, data2);
-    return test;
+bool PelcoCam::send_command(uint8_t command=STOP, uint16_t data1 = 0x00, uint8_t data2 = 0x00) {
+    return bus_->command(address_, disable_ack_, command, data1, data2);
 }
 
 uint16_t PelcoCam::send_request(uint8_t request, uint16_t timeout = 1000) {
@@ -58,5 +55,5 @@ uint16_t PelcoCam::send_request(uint8_t request, uint16_t timeout = 1000) {
         return 0;
     }
 
-    return PelcoBus::request(address_, request, timeout);
+    return bus_->request(address_, request, timeout);
 }

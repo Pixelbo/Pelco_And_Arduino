@@ -56,23 +56,20 @@ class PelcoBus{
         int searchIndex(byte look_array[], byte value, size_t size);
         int searchIndexPROGMEM(const byte look_array[], byte value);
 
-
-    protected:
-        PelcoBus::PelcoBus();
-
         uint16_t txPin_;
         uint16_t rxPin_;
         uint16_t rePin_;
 
-        bool log_messages_;
-        char log_buffer[100];
+        
+bool log_messages_;
+char log_buffer[100];
+
+    public:
+
+        PelcoBus(uint8_t txPin, uint8_t rxPin, uint8_t readEnPin = NOT_A_PIN);
 
         bool command(uint8_t address, bool disableACK , uint8_t command, uint16_t data1 = 0x00, uint8_t data2 = 0x00);
         uint16_t request(uint8_t address, uint8_t request, int timeout = 1000);
-
-    public:
-        PelcoBus(uint8_t txPin, uint8_t rxPin, uint8_t readEnPin = NOT_A_PIN);
-        
 
         void begin(uint32_t config, bool log_messages = false);
 

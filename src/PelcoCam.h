@@ -13,17 +13,22 @@
 #include <SoftwareSerial.h>
 
 #include "Arduino.h"
-#include "constants.h"
-
+ 
 #include "PelcoBus.h"
 
-class PelcoCam: public PelcoBus{
+
+class PelcoCam{
     private:
         uint8_t address_;
         bool disable_ack_;
+        PelcoBus *bus_;
+
+        bool log_messages_;
+        char log_buffer[100];
+
 
     public:
-        PelcoCam(uint8_t address, bool disable_ack = false);
+        PelcoCam(PelcoBus *bus,  uint8_t address, bool disable_ack = false);
 
         bool available();
 
