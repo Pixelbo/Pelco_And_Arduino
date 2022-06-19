@@ -3,9 +3,7 @@
  *
  *  @mainpage The root of this libray!
  *
- *  @section  Written by Boris Hilkens 15/02/2022.
- *
- *  @section license License
+ *  @section  Written by Boris Hilkens 15/02/2022; with the help of the following people: My brother and my teacher!
  *
  *  MIT license, all text above must be included in any redistribution
  */

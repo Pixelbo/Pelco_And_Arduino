@@ -55,7 +55,7 @@ The acknoledge data that you received isn't right, the address byte isn't the on
 
 The acknoledge data that you received isn't right, the null byte (the third one) isn't detected by the program
 
-    "Cam %i: ERROR Could not verify camera ACK: bad checksum (is camera well plugged in?)\n",
+    "Cam 1: ERROR Could not verify camera ACK: bad checksum (is camera well plugged in?)\n",
 
 The acknoledge data that you received isn't right, the checksum byte isn't good
 

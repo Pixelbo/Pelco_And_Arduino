@@ -5,12 +5,8 @@
  *
  *  @section  Written by Boris Hilkens 05/06/2022
  *
- *  @section license License
- *
  *  MIT license, all text above must be included in any redistribution
  */
-
-
 
 #include <SoftwareSerial.h>
 
@@ -30,7 +26,7 @@
  *
  */
 
-PelcoBus::PelcoBus(uint8_t txPin, uint8_t rxPin, uint8_t readEnPin) {
+PelcoBus::PelcoBus(uint8_t rxPin, uint8_t txPin, uint8_t readEnPin) {
     txPin_ = txPin;
     rxPin_ = rxPin;
     rePin_ = readEnPin;
@@ -41,7 +37,7 @@ PelcoBus::PelcoBus(uint8_t txPin, uint8_t rxPin, uint8_t readEnPin) {
  *
  */
 
-void PelcoBus::begin(uint32_t config, bool log_messages = false) {
+void PelcoBus::begin(uint32_t config, bool log_messages) {
     uint16_t baud;
 
     switch (config) {
@@ -56,33 +52,36 @@ void PelcoBus::begin(uint32_t config, bool log_messages = false) {
         break;
     }
 
+    log_messages_ = false;
+
     if (log_messages) {
-/*         if (!Serial) {
+        if (!Serial) {
             Serial.begin(9600);
-        } */
+        }
+
         Serial.print(F("Message log has been activated for the Pelco Bus!\n"));
 
-        sprintf_P(log_buffer, (const char * ) F("PelcoBus config: baud=%u and protocol D \n"), baud);
+        sprintf_P(log_buffer, (const char *)F("PelcoBus config: baud=%u and protocol D\n"), baud);
         Serial.print(log_buffer);
 
         log_messages_ = true;
-    } else {
-        log_messages_ = false;
     }
 
-    if (rePin_ == NOT_A_PIN) {
-        autoModule_ = true; // Is the module an auto switching between tx and RX ?
-    } else {
+    // Declare pins
+    pinMode(rxPin_, INPUT);
+    pinMode(txPin_, OUTPUT);
+
+    // Is the module an auto switching between tx and RX ?
+    autoModule_ = true;
+
+    if (rePin_ != -1) {
         pinMode(rePin_, OUTPUT);
         autoModule_ = false;
+
+        digitalWrite(rePin_, HIGH); // Set the module in tx mode
     }
 
-    pinMode(txPin_, OUTPUT);
-    pinMode(rxPin_, INPUT);
-
-    if (!autoModule_)
-        digitalWrite(rePin_, HIGH); // Set the module in tx mode
-
+    // Initialize the serial bus
     SerialCamBus = new SoftwareSerial(rxPin_, txPin_);
     (*SerialCamBus).begin(baud);
 }
@@ -91,6 +90,7 @@ void PelcoBus::begin(uint32_t config, bool log_messages = false) {
  *  @brief  Send message to the camera
  *
  *  @param  address Address of the camera
+ *  @param  disableACK Disable ACK
  *  @param  command the wanted command (see header)
  *  @param  data1 Main parameter
  *  @param  data2 Second parameter for command that requires 2 parameters
@@ -98,7 +98,7 @@ void PelcoBus::begin(uint32_t config, bool log_messages = false) {
  *
  */
 
-bool PelcoBus::command(uint8_t address, bool disableACK , uint8_t command, uint16_t data1 = 0x00, uint8_t data2 = 0x00) {
+bool PelcoBus::command(uint8_t address, bool disableACK, uint8_t command, uint16_t data1, uint8_t data2) {
     messToCamera[0] = 0xFF;    // The first byte is always FF (sync)
     messToCamera[1] = address; // the second is the adress
 
@@ -129,7 +129,8 @@ bool PelcoBus::command(uint8_t address, bool disableACK , uint8_t command, uint1
 
         } else if ((searchIndexPROGMEM(QUERY_CMND, command) != -1 && !disableACK)) {
             if (log_messages_) {
-                sprintf_P(log_buffer, (const char * ) F("Cam %i: You are doing an query into send command ??????????"), address);
+                sprintf_P(log_buffer, (const char *)F("Cam %i: You are doing an query into send command ??????????"),
+                          address);
                 Serial.print(log_buffer);
             }
             return false;
@@ -145,8 +146,9 @@ bool PelcoBus::command(uint8_t address, bool disableACK , uint8_t command, uint1
                       0x100; // Checksum modulo 0x100
 
     if (log_messages_) { // log the message
-        sprintf_P(log_buffer, (const char * ) F("Cam %i: Sending message: "), address);
+        sprintf_P(log_buffer, (const char *)F("Cam %i: Sending message: "), address);
         Serial.print(log_buffer);
+
         for (int i = 0; i < 7; i++) {
             sprintf(log_buffer, "%02X", messToCamera[i]);
             Serial.print(log_buffer);
@@ -157,11 +159,10 @@ bool PelcoBus::command(uint8_t address, bool disableACK , uint8_t command, uint1
 
     (*SerialCamBus).write(messToCamera, sizeof(messToCamera)); // Write to the camera
 
-
     ///////////////////////////////////
 
-    
-    if ((!disableACK) && (!disableACK)) { // Check the response of the camera only if it isn't a request or the camera does not support return
+    if (!disableACK) { // Check the response of the camera only if it isn't a request or the camera does not support
+                       // return
         int timeout = 10000; // 10 millissecond wait
 
         if (!autoModule_)
@@ -171,8 +172,9 @@ bool PelcoBus::command(uint8_t address, bool disableACK , uint8_t command, uint1
             if (timeout == 0) {                // If timeout is reached
                 if (log_messages_) {
                     sprintf_P(log_buffer,
-                     (const char * ) F("Cam %i: ERROR Could not verify camera ACK: timeout reached (is camera well plugged in?)\n"),
-                            address);
+                              (const char *)F("Cam %i: ERROR Could not verify camera ACK: timeout reached (is camera "
+                                              "well plugged in?)\n"),
+                              address);
                     Serial.print(log_buffer);
                 }
                 if (!autoModule_)
@@ -182,8 +184,9 @@ bool PelcoBus::command(uint8_t address, bool disableACK , uint8_t command, uint1
             timeout--;
             delayMicroseconds(10);
         }
+
         if (log_messages_) {
-            sprintf_P(log_buffer, (const char * ) F("Cam %i: Reading Acknoledge from camera\n"), address);
+            sprintf_P(log_buffer, (const char *)F("Cam %i: Reading Acknoledge from camera\n"), address);
             Serial.print(log_buffer);
         }
 
@@ -193,7 +196,7 @@ bool PelcoBus::command(uint8_t address, bool disableACK , uint8_t command, uint1
             digitalWrite(rePin_, HIGH); // set back at TX mode
 
         if (log_messages_) {
-            sprintf_P(log_buffer, (const char * ) F("Cam %i: Received ACK data (may be wrong):   "), address);
+            sprintf_P(log_buffer, (const char *)F("Cam %i: Received ACK data (may be wrong):   "), address);
             Serial.print(log_buffer);
 
             for (int i = 0; i < 7; i++) {
@@ -205,9 +208,11 @@ bool PelcoBus::command(uint8_t address, bool disableACK , uint8_t command, uint1
 
         if (ACKmessFromCamera[0] != 0xFF) { // Check sync byte and checksum of the previous comand
             if (log_messages_) {
-                sprintf_P(log_buffer,
-                    (const char * ) F("Cam %i: ERROR Could not verify camera ACK: bad sync byte (is camera well plugged in?)\n"),
-                        address);
+                sprintf_P(
+                    log_buffer,
+                    (const char *)F(
+                        "Cam %i: ERROR Could not verify camera ACK: bad sync byte (is camera well plugged in?)\n"),
+                    address);
                 Serial.print(log_buffer);
             }
             return false;
@@ -216,8 +221,9 @@ bool PelcoBus::command(uint8_t address, bool disableACK , uint8_t command, uint1
         if (ACKmessFromCamera[1] != address) { // Check adress byte
             if (log_messages_) {
                 sprintf_P(log_buffer,
-                    (const char * ) F("Cam %i: ERROR Could not verify camera ACK: bad address (is camera well plugged in?)\n"),
-                        address);
+                          (const char *)F(
+                              "Cam %i: ERROR Could not verify camera ACK: bad address (is camera well plugged in?)\n"),
+                          address);
                 Serial.print(log_buffer);
             }
             return false;
@@ -225,9 +231,11 @@ bool PelcoBus::command(uint8_t address, bool disableACK , uint8_t command, uint1
 
         if (ACKmessFromCamera[2] != 0x00) { // check the always 0 byte (alarm byte)
             if (log_messages_) {
-                sprintf_P(log_buffer,
-                    (const char * ) F("Cam %i: ERROR Could not verify camera ACK: bad null ???? (is camera well plugged in?)\n"),
-                        address);
+                sprintf_P(
+                    log_buffer,
+                    (const char *)F(
+                        "Cam %i: ERROR Could not verify camera ACK: bad null ???? (is camera well plugged in?)\n"),
+                    address);
                 Serial.print(log_buffer);
             }
             return false;
@@ -236,15 +244,16 @@ bool PelcoBus::command(uint8_t address, bool disableACK , uint8_t command, uint1
         if (ACKmessFromCamera[3] != messToCamera[6]) { // Check the checksum
             if (log_messages_) {
                 sprintf_P(log_buffer,
-                    (const char * ) F("Cam %i: ERROR Could not verify camera ACK: bad checksum (is camera well plugged in?)\n"),
-                        address);
+                          (const char *)F(
+                              "Cam %i: ERROR Could not verify camera ACK: bad checksum (is camera well plugged in?)\n"),
+                          address);
                 Serial.print(log_buffer);
             }
             return false;
         }
 
         if (log_messages_) {
-            sprintf_P(log_buffer, (const char * ) F("Cam %i: Message sent and ACK received!\n"), address);
+            sprintf_P(log_buffer, (const char *)F("Cam %i: Message sent and ACK received!\n"), address);
             Serial.print(log_buffer);
         }
         return true;
@@ -261,14 +270,14 @@ bool PelcoBus::command(uint8_t address, bool disableACK , uint8_t command, uint1
  * @return true if succeded, false if an error occured
  */
 
-uint16_t PelcoBus::request(uint8_t address, uint8_t request, int timeout = 1000) {
+uint16_t PelcoBus::request(uint8_t address, uint8_t request, int timeout) {
     byte response_command;
 
     if (searchIndexPROGMEM(QUERY_CMND, request) != -1) {
         response_command = pgm_read_byte(&RESP_CMND[searchIndexPROGMEM(QUERY_CMND, request)]); // Magic!
     } else {
         if (log_messages_) {
-            sprintf_P(log_buffer, (const char * ) F("Cam %i: No valid request provided\n"), address);
+            sprintf_P(log_buffer, (const char *)F("Cam %i: No valid request provided\n"), address);
             Serial.print(log_buffer);
             Serial.println(request);
         }
@@ -286,7 +295,7 @@ uint16_t PelcoBus::request(uint8_t address, uint8_t request, int timeout = 1000)
     while (!(*SerialCamBus).available()) { // Wait for the first bit
         if (timeout == 0) {                // If timeout is reached
             if (log_messages_) {
-                sprintf_P(log_buffer, (const char * ) F("Cam %i: ERROR timout reached\n"), address);
+                sprintf_P(log_buffer, (const char *)F("Cam %i: ERROR timout reached\n"), address);
                 Serial.print(log_buffer);
             }
             if (!autoModule_) {
@@ -314,7 +323,7 @@ uint16_t PelcoBus::request(uint8_t address, uint8_t request, int timeout = 1000)
 
     if (command_index == -1) { // Checks if found
         if (log_messages_) {
-            sprintf_P(log_buffer, (const char * ) F("Cam %i: Warn: no reponse from camera (bad index)\n"), address);
+            sprintf_P(log_buffer, (const char *)F("Cam %i: Warn: no reponse from camera (bad index)\n"), address);
             Serial.print(log_buffer);
         }
         return -1;
@@ -334,7 +343,7 @@ uint16_t PelcoBus::request(uint8_t address, uint8_t request, int timeout = 1000)
     }
 
     if (log_messages_) {
-        sprintf_P(log_buffer, (const char * ) F("Cam %i: Message from camera: "), address);
+        sprintf_P(log_buffer, (const char *)F("Cam %i: Message from camera: "), address);
         Serial.print(log_buffer);
         for (int i = 0; i < 7; i++) {
             sprintf(log_buffer, "%02X ", messFromcamera[i]);
@@ -346,8 +355,9 @@ uint16_t PelcoBus::request(uint8_t address, uint8_t request, int timeout = 1000)
     return (uint16_t)((((uint16_t)messFromcamera[4]) << 8) | ((uint16_t)messFromcamera[5])); // Return LSB data
 }
 
-////////todo get the response if it is a query or extended one!!
+// todo get the response if it is a query or extended one!!
 bool PelcoBus::send_raw(String hex_string) {
+
     hex_string.replace(" ", ""); // Replace spaces
 
     int size = hex_string.length() / 2; // Size of the string without space
@@ -365,17 +375,18 @@ bool PelcoBus::send_raw(String hex_string) {
 
     if (raw_command[0] != 0xFF) {
         if (log_messages_) {
-            sprintf_P(log_buffer, (const char * ) F("Cam %i: Wrong sync byte, updating to right sync byte\n"), address);
+            sprintf_P(log_buffer, (const char *)F("Cam %i: Wrong sync byte, updating to right sync byte\n"), address);
             Serial.print(log_buffer);
         }
         raw_command[0] = 0xFF;
     }
 
-    /////Check checksum
+    /////Check checksum if wrong, replace it
     uint8_t checksum = (raw_command[1] + raw_command[2] + raw_command[3] + raw_command[4] + raw_command[5]) % 0x100;
+
     if (checksum != raw_command[6]) {
         if (log_messages_) {
-            sprintf_P(log_buffer, (const char * ) F("Cam %i: Wrong checksum, updating to right checksum\n"), address);
+            sprintf_P(log_buffer, (const char *)F("Cam %i: Wrong checksum, updating to right checksum\n"), address);
             Serial.print(log_buffer);
         }
 
@@ -383,7 +394,7 @@ bool PelcoBus::send_raw(String hex_string) {
     }
 
     if (log_messages_) {
-        sprintf_P(log_buffer, (const char * ) F("Cam %i: sending message "), address);
+        sprintf_P(log_buffer, (const char *)F("Cam %i: sending message "), address);
         Serial.print(log_buffer);
         for (int i = 0; i < 7; i++) {
             sprintf(log_buffer, "%02X ", messFromcamera[i]);
@@ -396,7 +407,6 @@ bool PelcoBus::send_raw(String hex_string) {
 
     return true;
 }
-
 
 /*!
  *  @brief  Search a value trough a array of bytes one function is for progmem the other one isn't for progmem
@@ -417,8 +427,8 @@ int PelcoBus::searchIndexPROGMEM(const byte look_array[], byte value) {
     return -1;
 }
 
-int PelcoBus::searchIndex(byte look_array[], byte value,
-                             size_t size) { // For an x or y reason sizeof don't work properly
+// For an x or y reason sizeof don't work properly
+int PelcoBus::searchIndex(byte look_array[], byte value, size_t size) {
 
     int i = 0;
     for (i = 0; i <= (size); i++) {

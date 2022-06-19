@@ -1,3 +1,13 @@
+/*!
+ *  @file constants.h
+ *
+ *  @mainpage Stores all constants used in this library in progmem or not
+ *
+ *  @section  Written by Boris Hilkens 11/06/2022
+ *
+ *  MIT license, all text above must be included in any redistribution
+ */
+
 #ifndef constants_H
 #define constants_H
 
@@ -117,6 +127,7 @@ const byte PRESET_CMND[3] PROGMEM= {SET_PRESET, CLR_PRESET, GOTO_PRESET}; //will
 #define PELCO_D4800 0xD48
 #define PELCO_D9600 0xD96
 
+#define NOT_A_PIN -1
 
 //////////////////////////////////////////::
 
