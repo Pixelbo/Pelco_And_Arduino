@@ -1,16 +1,17 @@
 #include "Arduino.h"
 #include <Pelco_And_Arduino.h>
 
-PelcoBus MyPelcoBus(6,  // TX pin (Arduino to Cam)
-                    7,  // RX pin (Cam to Arduino)
-                    8); // RE pin for manual switching modules set to -1 if it is a auto module (like a groove one)
+PelcoBus MyPelcoBus(6,  // RX pin (Cam to Arduino)
+                    7,  // TX pin (Arduino to Cam)
+                    8); // RE pin for manual switching modules set to -1 or nothing if it is a auto module (like a groove one)
+
+
+//No need to declare a camera here
 
 void setup() {
-    //Here we don't need to declare a camera because all we send is raw
-
     Serial.begin(9600);
 
-    // Begin the serial communication
+    // Begin the bus communication at 9600 and enable logging
     MyPelcoBus.begin(PELCO_D9600, true);
 
     Serial.println("Init Finished!");

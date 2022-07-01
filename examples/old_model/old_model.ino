@@ -1,26 +1,24 @@
 #include "Arduino.h"
 #include <Pelco_And_Arduino.h>
 
-PelcoBus MyPelcoBus(6,  // TX pin (Arduino to Cam)
-                    7,  // RX pin (Cam to Arduino)
-                    8); // RE pin for manual switching modules set to -1 if it is a auto module (like a groove one)
+PelcoBus MyPelcoBus(6,  // RX pin (Cam to Arduino)
+                    7,  // TX pin (Arduino to Cam) 
+                    8); // RE pin for manual switching modules set to -1 or nothing if it is a auto module (like a groove one)
 
-PelcoBus::PelcoCam Camera1; //Declare a camera
+////IMPORTANT: Even if it is an old model without returning a response capabilities you need to specify a RX pin and a RE pin
+    
+PelcoCam Camera1(&MyPelcoBus, //The pointer to the bus
+                 1,           //Address of the camera
+                 true);      //We are NOT getting a response
 
 void setup() {
     Serial.begin(9600);
 
-    // Begin the serial communication
+    // Begin the bus communication at 9600 and enable logging
     MyPelcoBus.begin(PELCO_D9600, true);
 
-    // Set camera settings
-    Camera1.address = 1; //Address of the camera
-    Camera1.disable_ack = true; //Old models function one 2 pair of wires and only one is usable, the TX one, so it's impossible that it can send back a reqponse
-
-
-    // Send stop, send_command will return a bool that indicates if the cameras sended its ACK
-    // It's a good way to see if the camera is plugged in
-    while (!MyPelcoBus.send_command(Camera1, STOP)) {
+    //Is the camera online? this will fail because it is an old models
+    while (!Camera1.available()/* <---- will fail! */) { 
         Serial.println("Camera not plugged?");
         delay(1000);
     }
@@ -30,13 +28,13 @@ void setup() {
 void loop() {
 
     //Pan to the left with max speed before turbo
-    MyPelcoBus.send_command(Camera1, PAN_L, 0x3F);
+    Camera1.send_command(PAN_L, 0x3F);
     delay(1000);
-    MyPelcoBus.send_command(Camera1, STOP); //Stop the camera
+    Camera1.send_command(STOP); //Stop the camera
     delay(1000);
     //Pan to the left with less speed than the tilt speed that goes up
-    MyPelcoBus.send_command(Camera1, PAN_R, 0x3F);
+    Camera1.send_command(PAN_R, 0x3F);
     delay(1000);
-    MyPelcoBus.send_command(Camera1, STOP); //Stop the camera
+    Camera1.send_command(STOP); //Stop the camera
     delay(1000);
 }

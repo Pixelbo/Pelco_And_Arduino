@@ -14,15 +14,20 @@
 #include "Arduino.h"
 #include <SoftwareSerial.h>
 
+#include "utils.h"
 #include "constants.h"
-
-bool log_messages_;
-char log_buffer[100];
 
 class PelcoBus {
 
   private:
+    bool autoModule_;
+    uint8_t txPin_;
+    uint8_t rxPin_;
+    int8_t rePin_;
+
     SoftwareSerial *SerialCamBus;
+
+    Utils utils;
 
     // I know this a duplicata but it's for lisibility
 
@@ -53,21 +58,13 @@ class PelcoBus {
         0x00  // Checksum taken for the previous message
     };
 
-    int searchIndex(byte look_array[], byte value, size_t size);
-    int searchIndexPROGMEM(const byte look_array[], byte value);
-
-    bool autoModule_;
-
-    uint16_t txPin_;
-    uint16_t rxPin_;
-    uint16_t rePin_;
-
   public:
-    PelcoBus(uint8_t rxPin, uint8_t txPin, uint8_t readEnPin = -1); // Contructor
+    PelcoBus(uint8_t rxPin, uint8_t txPin , int8_t readEnPin = -1); // Contructor
     void begin(uint32_t config, bool log_messages = false);         // Begin the module
 
     bool command(uint8_t address, bool disableACK, uint8_t command, uint16_t data1 = 0x00,
                  uint8_t data2 = 0x00); // Send a command the bus with complete args
+
     uint16_t request(uint8_t address, uint8_t request, int timeout = 10000);
 
     bool send_raw(String hex_string); // TODO: get ACK

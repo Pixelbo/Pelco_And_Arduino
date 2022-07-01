@@ -12,6 +12,7 @@
 
 #include "Arduino.h"
 
+#include "utils.h"
 #include "PelcoBus.h"
 
 class PelcoCam {
@@ -19,6 +20,8 @@ class PelcoCam {
     uint8_t address_;
     bool disable_ack_;
     PelcoBus *bus_;
+
+    Utils utils;
 
   public:
     PelcoCam(PelcoBus *bus, uint8_t address, bool disable_ack = false);
