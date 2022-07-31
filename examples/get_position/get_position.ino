@@ -13,8 +13,8 @@ PelcoCam Camera1(&MyPelcoBus, //The pointer to the bus
 void setup() {
     Serial.begin(9600);
 
-    // Begin the bus communication at 9600 and enable logging
-    MyPelcoBus.begin(PELCO_D9600, true);
+    // Begin the bus communication at 9600 and disable logging
+    MyPelcoBus.begin(PELCO_D9600, false);
 
     //Is the camera online?
     while (!Camera1.available()) {
