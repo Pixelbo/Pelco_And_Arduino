@@ -1,26 +1,23 @@
 #include "Arduino.h"
 #include <Pelco_And_Arduino.h>
 
-PelcoBus MyPelcoBus(6,  // TX pin (Arduino to Cam)
-                    7,  // RX pin (Cam to Arduino)
-                    8); // RE pin for manual switching modules set to -1 if it is a auto module (like a groove one)
+PelcoBus MyPelcoBus(6,  // RX pin (Cam to Arduino)
+                    7,  // TX pin (Arduino to Cam)
+                    8); // RE pin for manual switching modules set to -1 or nothing if it is a auto module (like a groove one)
 
-PelcoBus::PelcoCam Camera1; //Declare a camera
+    
+PelcoCam Camera1(&MyPelcoBus, //The pointer to the bus
+                 1,           //Address of the camera
+                 false);      //We are getting a response
 
 void setup() {
     Serial.begin(9600);
 
-    // Begin the serial communication
-    MyPelcoBus.begin(PELCO_D9600, true);
+    // Begin the bus communication at 9600 and disable logging
+    MyPelcoBus.begin(PELCO_D9600, false);
 
-    // Set camera settings
-    Camera1.address = 1; //Address of the camera
-    Camera1.disable_ack = false; //For this exemple, this must set to false!
-
-
-    // Send stop, send_command will return a bool that indicates if the cameras sended its ACK
-    // It's a good way to see if the camera is plugged in
-    while (!MyPelcoBus.send_command(Camera1, STOP)) {
+    //Is the camera online?
+    while (!Camera1.available()) {
         Serial.println("Camera not plugged?");
         delay(1000);
     }
@@ -28,12 +25,12 @@ void setup() {
 }
 
 void loop() {
-        MyPelcoBus.send_command(Camera1, PAN_L, 0x3F); // Spin for a random time
-        delay(random(1000, 2000));
+        Camera1.send_command(SET_PAN, random(0, 35999)); // set pan to a random angle
 
-        int angle100 = MyPelcoBus.send_request(Camera1, QUERY_PAN); // Get the current angle of the camera
+        int angle100 = Camera1.send_request(QUERY_PAN); // Get the current angle of the camera
 
         float angle = angle100 / 100.0; // Convert to float
 
         Serial.println("Angle detected: " + String(angle));
+        delay(200);
 }
