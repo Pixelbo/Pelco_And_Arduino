@@ -46,7 +46,7 @@ bool PelcoCam::available() { // Returns true if there's a ACK
                 address_);
             Serial.print(utils.log_buffer);
         }
-        return false;
+        return true;
     }
     return bus_->command(address_, disable_ack_, DUMMY);
 }

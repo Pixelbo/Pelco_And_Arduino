@@ -202,8 +202,8 @@ bool PelcoBus::command(uint8_t address, bool disableACK, uint8_t command, uint16
             sprintf_P(utils.log_buffer, (const char *)F("Cam %i: Received ACK data (may be wrong):   "), address);
             Serial.print(utils.log_buffer);
 
-            for (int i = 0; i < 7; i++) {
-                sprintf(utils.log_buffer, "%02X ", messFromcamera[i]);
+            for (int i = 0; i < 4; i++) {
+                sprintf(utils.log_buffer, "%02X ", ACKmessFromCamera[i]);
                 Serial.print(utils.log_buffer);
             }
             Serial.println();
@@ -410,7 +410,7 @@ bool PelcoBus::send_raw(String hex_string) {
         sprintf_P(utils.log_buffer, (const char *)F("Cam %i: sending message "), address);
         Serial.print(utils.log_buffer);
         for (int i = 0; i < 7; i++) {
-            sprintf(utils.log_buffer, "%02X ", messFromcamera[i]);
+            sprintf(utils.log_buffer, "%02X ", raw_command[i]);
             Serial.print(utils.log_buffer);
         }
         Serial.println();
