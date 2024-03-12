@@ -18,7 +18,7 @@ void setup() {
     MyPelcoBus.begin(PELCO_D9600, true);
 
     //Is the camera online? this will fail because it is an old models
-    while (!Camera1.available()/* <---- will fail! */) { 
+    while (Camera1.available()/* <---- will fail! */) { 
         Serial.println("Camera not plugged?");
         delay(1000);
     }

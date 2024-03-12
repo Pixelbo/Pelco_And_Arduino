@@ -64,7 +64,7 @@ void PelcoBus::begin(uint32_t config, bool log_messages) {
 
         Serial.print(F("Message log has been activated for the Pelco Bus!\n"));
 
-        sprintf_P(utils.log_buffer, (const char *)F("PelcoBus config: baud=%u and protocol D\n"), baud);
+        sprintf_P(utils.log_buffer, (const char *)F("PelcoBus V2.3.0 config: baud=%u and protocol D\n"), baud);
         Serial.print(utils.log_buffer);
 
         utils.log_messages_ = true;
