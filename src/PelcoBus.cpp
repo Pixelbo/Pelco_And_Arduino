@@ -53,6 +53,9 @@ void PelcoBus::begin(uint32_t config, bool log_messages) {
     case PELCO_D9600:
         baud = 9600;
         break;
+    default:
+        baud = 2400;
+        break;
     }
    
     utils.log_messages_ = false;
@@ -259,8 +262,8 @@ bool PelcoBus::command(uint8_t address, bool disableACK, uint8_t command, uint16
             sprintf_P(utils.log_buffer, (const char *)F("Cam %i: Message sent and ACK received!\n"), address);
             Serial.print(utils.log_buffer);
         }
-        return true;
     }
+    return true;
 }
 
 /*!
